@@ -25,11 +25,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+# Tool to generate plots
 class PlotGenerator(object):
+    """
+    Tool to generate plots
+    """
 
     # Constructor
     def __init__(self, title="", n_plots=1):
-
+        """
+        Constructor
+        :param title:
+        :param n_plots:
+        """
         # Variables
         self._sub_fig = []
         self._plot_count = 1
