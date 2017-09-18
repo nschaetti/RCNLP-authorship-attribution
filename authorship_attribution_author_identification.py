@@ -22,6 +22,7 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import nsNLP
 import io
 import os
 import argparse
@@ -73,27 +74,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Logging
-    logging = RCNLPLogging(exp_name=ex_name, exp_inst=ex_instance,
-                           exp_value=RCNLPLogging.generate_experience_name(locals()))
+    logging = Logging(exp_name=ex_name, exp_inst=ex_instance,
+                           exp_value=Logging.generate_experience_name(locals()))
     logging.save_globals()
     logging.save_variables(locals())
-
-    # PCA model
-    pca_model = None
-    if args.pca_model != "":
-        pca_model = pickle.load(open(args.pca_model, 'r'))
-    # end if
-
-    # >> 1. Choose a text to symbol converter.
-    if args.converter == "pos":
-        converter = RCNLPPosConverter(resize=args.in_components, pca_model=pca_model)
-    elif args.converter == "tag":
-        converter = RCNLPTagConverter(resize=args.in_components, pca_model=pca_model)
-    elif args.converter == "fw":
-        converter = RCNLPFuncWordConverter(resize=args.in_components, pca_model=pca_model)
-    else:
-        converter = RCNLPWordVectorConverter(resize=args.in_components, pca_model=pca_model)
-    # end if
 
     # >> 2. Array for results
     average_success_rate = np.array([])
@@ -102,11 +86,12 @@ if __name__ == "__main__":
     training_set_indexes = np.arange(0, args.training_size, 1)
     test_set_indexes = np.arange(args.training_size, args.training_size + args.test_size, 1)
 
-    # >> 6. Create Echo Word Classifier
-    classifier = RCNLPEchoWordClassifier(size=rc_size, input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
-                                         input_sparsity=rc_input_sparsity, converter=converter,
-                                         n_classes=2,
-                                         spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity)
+    # Classifier
+    classifier = nsNLP.esn_models.ESNTextClassifier.create(classes=range(2), size=rc_size,
+                                                           input_scaling=rc_input_scaling, leak_rate=rc_leak_rate,
+                                                           input_sparsity=rc_input_sparsity, converter=converter,
+                                                           spectral_radius=rc_spectral_radius, w_sparsity=rc_w_sparsity,
+                                                           pca_model=args.pca_model, in_components=args.in_components)
 
     # >> 7. Positive examples
     author_path = os.path.join(args.dataset, "total", args.author)
