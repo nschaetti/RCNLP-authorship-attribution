@@ -9,7 +9,7 @@
 # Imports
 import json
 import os
-from .IQLAAuthor import IQLAAuthor
+from Author import Author
 
 
 # Class to access to the corpus
@@ -141,12 +141,12 @@ class Corpus(object):
     def _load(self):
         """
         Load
-        :return:
+        :return
         """
-        authors_infos = json.load(open(os.path.join(self._dataset_path, "authors.json"), 'r'))
+        authors_infos = json.load(open(os.path.join(self._dataset_path), 'r'))
         for author_name in authors_infos.keys():
             # New author
-            author = IQLAAuthor(name=author_name, dataset_path=self._dataset_path)
+            author = Author(name=author_name, dataset_path=self._dataset_path)
 
             # Add texts
             for text in author.get_texts():
