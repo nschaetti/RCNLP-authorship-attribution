@@ -49,7 +49,6 @@ class Logging(object):
 
         # Create directories
         self._create_directories()
-
     # end __init__
 
     # Create the directories
