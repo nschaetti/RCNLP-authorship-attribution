@@ -143,7 +143,7 @@ class Corpus(object):
         Load
         :return
         """
-        authors_infos = json.load(open(os.path.join(self._dataset_path), 'r'))
+        authors_infos = json.load(open(os.path.join(self._dataset_path, "authors.json"), 'r'))
         for author_name in authors_infos.keys():
             # New author
             author = Author(name=author_name, dataset_path=self._dataset_path)
