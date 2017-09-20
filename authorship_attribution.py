@@ -52,7 +52,32 @@ if __name__ == "__main__":
 
     # Iterate
     for space in param_space:
-        print(space)
-        print(u"")
-    # end for
+        # Params
+        reservoir_size = space['reservoir_size']
+        w_sparsity = space['w_sparsity']
+        leak_rate = space['leak_rate']
+        input_scaling = space['input_scaling']
+        input_sparsity = space['input_sparsity']
+        spectral_radius = space['spectral_radius']
+
+        # Create ESN text classifier
+        classifier = nsNLP.esn_models.ESNTextClassifier.create\
+        (
+            classes=range(15),
+            rc_size=reservoir_size,
+            rc_spectral_radius=spectral_radius,
+            rc_leak_rate=leak_rate,
+            rc_input_scaling=input_scaling,
+            rc_input_sparsity=input_sparsity,
+            rc_w_sparsity=w_sparsity,
+            converter=args.get_input_params()
+        )
+
+        # 10 fold cross validation
+
+        # Save result
+
+        # Delete classifier
+        del classifier
+        # end for
 # end if
