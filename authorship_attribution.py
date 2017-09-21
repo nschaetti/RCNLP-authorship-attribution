@@ -23,15 +23,10 @@
 #
 
 import nsNLP
-import os
-import argparse
-import pickle
-import numpy as np
 from parameters.ArgumentBuilder import ArgumentBuilder
 from parameters.ParameterSpace import ParameterSpace
-from corpus.Author import Author
+from corpus.CrossValidation import CrossValidation
 from corpus.Corpus import Corpus
-from corpus.Text import Text
 
 ####################################################
 # Main function
@@ -49,6 +44,13 @@ if __name__ == "__main__":
 
     # Parameter space
     param_space = ParameterSpace(args.get_reservoir_params())
+
+    # Tokenizer
+    if args.get_value("tokenizer") == "nltk":
+        tokenizer = nsNLP.tokenization.NLTKTokenizer()
+    else:
+        tokenizer = nsNLP.tokenization.SpacyTokenizer()
+    # end if
 
     # Iterate
     for space in param_space:
@@ -74,8 +76,16 @@ if __name__ == "__main__":
         )
 
         # 10 fold cross validation
+        cross_validation = CrossValidation(reteursC50.get_authors()[:args.get_n_authors()])
 
-        # Save result
+        # For each fold
+        for train_set, test_set in cross_validation:
+            # Train the classifier
+            for text in train_set:
+                # Train
+                classifier.train(tokenizer(text.get_text()), text.get_author().get_name())
+            # end for
+        # end for
 
         # Delete classifier
         del classifier
