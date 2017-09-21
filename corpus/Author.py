@@ -100,7 +100,7 @@ class Author(object):
 
         # For each texts
         for author_text in author_texts:
-            self._texts.append(Text(text_path=os.path.join(self._dataset_path, author_text), author=self))
+            self._texts.append(Text(text_path=os.path.join(self._dataset_path, author_text + ".txt"), author=self))
         # end for
     # end _load
 
