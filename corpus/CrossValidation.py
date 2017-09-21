@@ -28,7 +28,7 @@ class CrossValidation(object):
         self._k = k
         self._pos = 0
         self._n_texts = len(authors[0].get_texts())
-        self._fold_size = math.floor(float(self._n_texts) / float(k))
+        self._fold_size = int(math.floor(float(self._n_texts) / float(k)))
     # end __init__
 
     #################################################
@@ -77,7 +77,7 @@ class CrossValidation(object):
             author_texts = author.get_texts()
 
             # Each indexes
-            for idx in train_set:
+            for idx in train_text_ids:
                 train_set.append(author_texts[idx])
             # end for
         # end for
@@ -89,13 +89,13 @@ class CrossValidation(object):
             author_texts = author.get_texts()
 
             # Each indexes
-            for idx in test_set:
+            for idx in test_text_ids:
                 test_set.append(author_texts[idx])
             # end for
         # end for
 
         # Next fold
-        self._k += 1
+        self._pos += 1
 
         # Result
         return train_set, test_set
