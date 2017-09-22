@@ -23,6 +23,7 @@
 #
 
 import nsNLP
+import numpy as np
 from parameters.ArgumentBuilder import ArgumentBuilder
 from parameters.ParameterSpace import ParameterSpace
 from corpus.CrossValidation import CrossValidation
@@ -48,46 +49,108 @@ if __name__ == "__main__":
     # Tokenizer
     if args.get_value("tokenizer") == "nltk":
         tokenizer = nsNLP.tokenization.NLTKTokenizer()
-    else:
+    elif args.get_value("tokenizer") == "spacy":
         tokenizer = nsNLP.tokenization.SpacyTokenizer()
+    else:
+        tokenizer = nsNLP.tokenization.SpacyTokenizer(original=True)
     # end if
+
+    # Author list
+    authors = reteursC50.get_authors()[:args.get_n_authors()]
+    author_list = reteursC50.get_authors_list()[:args.get_n_authors()]
+
+    # First params
+    rc_size = int(args.get_reservoir_params()['reservoir_size'][0])
+    rc_w_sparsity = args.get_reservoir_params()['w_sparsity'][0]
+
+    # Create W matrix
+    w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
 
     # Iterate
     for space in param_space:
         # Params
-        reservoir_size = space['reservoir_size']
+        reservoir_size = int(space['reservoir_size'])
         w_sparsity = space['w_sparsity']
         leak_rate = space['leak_rate']
         input_scaling = space['input_scaling']
         input_sparsity = space['input_sparsity']
         spectral_radius = space['spectral_radius']
+        converter_desc = args.get_input_params()[0][0]
 
-        # Create ESN text classifier
-        classifier = nsNLP.esn_models.ESNTextClassifier.create\
-        (
-            classes=range(15),
-            rc_size=reservoir_size,
-            rc_spectral_radius=spectral_radius,
-            rc_leak_rate=leak_rate,
-            rc_input_scaling=input_scaling,
-            rc_input_sparsity=input_sparsity,
-            rc_w_sparsity=w_sparsity,
-            converter=args.get_input_params()
-        )
+        # Average sample
+        average_sample = np.array([])
 
-        # 10 fold cross validation
-        cross_validation = CrossValidation(reteursC50.get_authors()[:args.get_n_authors()])
+        # For each sample
+        for n in range(args.get_n_samples()):
+            # Create ESN text classifier
+            classifier = nsNLP.esn_models.ESNTextClassifier.create\
+            (
+                classes=author_list,
+                rc_size=reservoir_size,
+                rc_spectral_radius=spectral_radius,
+                rc_leak_rate=leak_rate,
+                rc_input_scaling=input_scaling,
+                rc_input_sparsity=input_sparsity,
+                rc_w_sparsity=w_sparsity,
+                converter_desc=converter_desc,
+                use_sparse_matrix=True if converter_desc == 'oh' else False,
+                w=w if args.keep_W() else None
+            )
 
-        # For each fold
-        for train_set, test_set in cross_validation:
-            # Train the classifier
-            for text in train_set:
+            # Print classifier
+            print(classifier)
+
+            # 10 fold cross validation
+            cross_validation = CrossValidation(authors)
+
+            # Average
+            average_k_fold = np.array([])
+
+            # For each fold
+            for k, (train_set, test_set) in enumerate(cross_validation):
+                # Add to examples
+                for index, text in enumerate(train_set):
+                    # Add
+                    classifier.train(tokenizer(text.x()), text.y())
+                # end for
+
                 # Train
-                classifier.train(tokenizer(text.get_text()), text.get_author().get_name())
+                classifier.finalize(verbose=args.verbose())
+
+                # Counters
+                successes = 0.0
+
+                # Test the classifier
+                for text in test_set:
+                    # Predict
+                    prediction, probs = classifier.predict(tokenizer(text.x()))
+
+                    # Compare
+                    if prediction == text.y():
+                        successes += 1.0
+                    # end if
+                # end for
+
+                # Print success rate
+                print(u"\t\tK-{} Success rate: {}".format(k+1, successes / float(len(test_set))))
+                average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
+
+                # Reset classifier
+                classifier.reset()
             # end for
+
+            # Average
+            print(u"\tCV success rate: {}".format(np.average(average_k_fold)))
+
+            # Add
+            average_sample = np.append(average_sample, [np.average(average_k_fold)])
+
+            # Delete classifier
+            del classifier
         # end for
 
-        # Delete classifier
-        del classifier
-        # end for
+        # Average
+        print(u"Overall success rate: {}".format(np.average(average_sample)))
+
+    # end for
 # end if
