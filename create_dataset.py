@@ -26,14 +26,9 @@ import nsNLP
 import os
 import argparse
 import json
-import pickle
-import numpy as np
+import random
+import string
 from shutil import copyfile
-from nsNLP.esn_models.converters.PosConverter import PosConverter
-from nsNLP.esn_models.converters.TagConverter import TagConverter
-from nsNLP.esn_models.converters.WVConverter import WVConverter
-from nsNLP.esn_models.converters.FuncWordConverter import FuncWordConverter
-from tools.Logging import Logging
 
 
 ####################################################
@@ -53,38 +48,36 @@ if __name__ == "__main__":
     # Author informations
     author_infos = dict()
 
-    # Indexes
-    text_index = 0
-    author_index = 0
+    # For train and test
+    for dset in ("C50test", "C50train"):
+        # For each author directory
+        for author_name in os.listdir(os.path.join(args.input, dset)):
+            # Author directory
+            author_path = os.path.join(args.input, dset, author_name)
 
-    # For each author directory
-    for author_directory in os.listdir(args.input):
-        # Author directory
-        author_path = os.path.join(args.input, author_directory)
+            # Add author to dict
+            if author_name not in author_infos.keys():
+                author_infos[author_name] = list()
+            # end if
 
-        # Add author to dict
-        author_infos[author_index] = list()
+            # For each text
+            for author_text in os.listdir(author_path):
+                # Text path
+                text_path = os.path.join(author_path, author_text)
 
-        # For each text
-        for author_text in os.listdir(author_path):
-            # Text path
-            text_path = os.path.join(author_path, author_text)
+                # Random name
+                random_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
 
-            # Destination
-            destination_path = os.path.join(args.output, str(text_index) + ".txt")
+                # Destination
+                destination_path = os.path.join(args.output, random_name + ".txt")
 
-            # Move
-            copyfile(text_path, destination_path)
+                # Move
+                copyfile(text_path, destination_path)
 
-            # Add to author
-            author_infos[author_index].append(str(text_index) + ".txt")
-
-            # Next index
-            text_index += 1
+                # Add to author
+                author_infos[author_name].append(random_name)
+            # end for
         # end for
-
-        # Author index
-        author_index += 1
     # end for
 
     # Write JSON
