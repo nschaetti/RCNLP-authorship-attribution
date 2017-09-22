@@ -76,21 +76,45 @@ class ArgumentBuilder(object):
         self._parser.add_argument("--input-sparsity", type=str, help="Input sparsity", default="0.05")
         self._parser.add_argument("--w-sparsity", type=str, help="W sparsity", default="0.05")
         self._parser.add_argument("--converters", type=str, help="The text converters to use (fw, pos, tag, wv, oh)",
-                            default='oh')
+                                  default='oh')
         self._parser.add_argument("--pca-model", type=str, help="PCA model to load", default=None)
+        self._parser.add_argument("--keep-w", action='store_true', help="Keep W matrix", default=False)
 
         # Tokenizer and word vector parameters
-        self._parser.add_argument("--tokenizer", type=str, help="Which tokenizer to use (spacy, nltk)", default='nltk')
-        self._parser.add_argument("--word-embeddings", type=str, help="Which word embeddings to use (spacy, nltk)", default='spacy')
+        self._parser.add_argument("--tokenizer", type=str, help="Which tokenizer to use (spacy, nltk, spacy-tokens)",
+                                  default='nltk')
+        # self._parser.add_argument("--word-embeddings", type=str, help="Which word embeddings to use (spacy, nltk)",
+        #                          default='spacy')
         self._parser.add_argument("--lang", type=str, help="Tokenizer language parameters", default='en')
 
         # Experiment output parameters
         self._parser.add_argument("--output", type=str, help="Experiment's output directory", required=True)
-        self._parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?", default=False)
+        self._parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?",
+                                  default=False)
+        self._parser.add_argument("--samples", type=int, help="Number of different reservoir to test", default=1)
+        self._parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
 
         # Parse arguments
         self._args = self._parser.parse_args()
     # end parser
+
+    # Keep W
+    def keep_W(self):
+        """
+        Keep W matrix
+        :return:
+        """
+        return self._args.keep_w
+    # end keep_W
+
+    # Verbose?
+    def verbose(self):
+        """
+        Verbose
+        :return:
+        """
+        return self._args.verbose
+    # end verbose
 
     # Get output
     def get_output(self):
@@ -118,6 +142,15 @@ class ArgumentBuilder(object):
         """
         return self._args.n_authors
     # end get_n_authors
+
+    # Get number of samples
+    def get_n_samples(self):
+        """
+        Get number of samples
+        :return:
+        """
+        return self._args.samples
+    # end get_n_samples
 
     # Get nth author
     def get_th_author(self, i):
