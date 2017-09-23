@@ -82,11 +82,16 @@ if __name__ == "__main__":
         spectral_radius = space['spectral_radius']
         converter_desc = args.get_input_params()[0][0]
 
+        # Set experience state
+        xp.set_state(space)
+
         # Average sample
         average_sample = np.array([])
 
         # For each sample
         for n in range(args.get_n_samples()):
+            # Set sample
+            xp.set_sample_state(n)
             print(u"Sample {}".format(n))
 
             # Create ESN text classifier
@@ -115,6 +120,9 @@ if __name__ == "__main__":
 
             # For each fold
             for k, (train_set, test_set) in enumerate(cross_validation):
+                # Set k
+                xp.set_fold_state(k)
+
                 # Add to examples
                 for index, text in enumerate(train_set):
                     # Add
@@ -139,6 +147,7 @@ if __name__ == "__main__":
                 # end for
 
                 # Print success rate
+                xp.add_result(successes / float(len(test_set)))
                 print(u"\t\tK-{} Success rate: {}".format(k+1, successes / float(len(test_set))))
                 average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
 
@@ -158,6 +167,8 @@ if __name__ == "__main__":
 
         # Average
         print(u"Overall success rate: {}".format(np.average(average_sample)))
-
     # end for
+
+    # Save experiment results
+    xp.save(args.get_output())
 # end if
