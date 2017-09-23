@@ -71,14 +71,16 @@ class ResultManager(object):
     ###########################################
 
     # Change parameter state
-    def set_state(self, param, value):
+    def set_state(self, pos):
         """
         Change parameter state
         :param param:
         :param value:
         :return:
         """
-        self._pos[param] = value
+        for param in pos.keys():
+            self._pos[param] = pos[param]
+        # end for
     # end set_state
 
     # Change sample state
