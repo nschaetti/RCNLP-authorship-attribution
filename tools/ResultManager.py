@@ -232,12 +232,28 @@ class ResultManager(object):
         # All samples
         all_samples = np.array([])
 
+        # Values samples
+        value_samples = dict()
+
         # Sample per values
         for value in values:
             # All range
-            position = [slice(None)] * self._n_dim
+            position_vector = [slice(None)] * self._n_dim
 
+            # Value position
+            value_pos = self._value2pos[param][value]
 
+            # Set index
+            position_vector[dim] = value_pos
+
+            # Samples
+            samples = self._result_matrix[tuple(position_vector)]
+
+            # Add to dict
+            value_samples[value] = samples
+
+            # Add to all samples
+            all_samples = np.append(all_samples, samples)
         # end for
     # end _save_param_data
 
