@@ -32,14 +32,35 @@ class ResultManager(object):
     """
 
     # Constructor
-    def __init__(self, params_dict, n_samples, k=10):
+    def __init__(self, name, description, params_dict, n_samples, k=10):
         """
         Constructor
         :param params_dict:
         """
+        # Properties
         self._params_dict = params_dict
         self._n_samples = n_samples
         self._k = k
+        self._fold = 0
+        self._sample = 0
+        self._n_dim = len(params_dict.keys()) + 2
+
+        # Param to dimension
+        self._param2dim = dict()
+        self._value2pos = dict()
+        for index, param in enumerate(params_dict.keys()):
+            self._param2dim[param] = index
+            self._value2pos[param] = dict()
+            for index2, value in enumerate(params_dict[param]):
+                self._value2pos[param][value] = index2
+            # end for
+        # end for
+
+        # Current parameter value
+        self._pos = dict()
+        for param in params_dict.keys():
+            self._pos[param] = params_dict[param][0]
+        # end for
 
         # Generate result matrix
         self._result_matrix = self._generate_matrix()
@@ -57,7 +78,7 @@ class ResultManager(object):
         :param value:
         :return:
         """
-        pass
+        self._pos[param] = value
     # end set_state
 
     # Change sample state
@@ -67,7 +88,7 @@ class ResultManager(object):
         :param n_sample:
         :return:
         """
-        pass
+        self._sample = n_sample
     # end set_sample_state
 
     # Change fold state
@@ -77,7 +98,7 @@ class ResultManager(object):
         :param k:
         :return:
         """
-        pass
+        self._fold = k
     # end set_fold_state
 
     # Save result
@@ -87,7 +108,29 @@ class ResultManager(object):
         :param success_rate:
         :return:
         """
-        pass
+        # Element pos
+        element_pos = [0] * self._n_dim
+
+        # For each param
+        for param in self._param2dim.keys():
+            # Dim
+            dim = self._param2dim[param]
+
+            # Pos of value
+            pos = self._value2pos[self._pos[param]]
+
+            # Set
+            element_pos[dim] = pos
+        # end for
+
+        # Sample
+        element_pos[-2] = self._sample
+
+        # Fold
+        element_pos[-1] = self._fold
+
+        # Set
+        self._result_matrix[type(element_pos)] = success_rate
     # end add_result
 
     # Save results
