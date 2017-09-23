@@ -24,6 +24,7 @@
 
 import nsNLP
 import numpy as np
+from tools.ResultManager import ResultManager
 from parameters.ArgumentBuilder import ArgumentBuilder
 from parameters.ParameterSpace import ParameterSpace
 from corpus.CrossValidation import CrossValidation
@@ -45,6 +46,10 @@ if __name__ == "__main__":
 
     # Parameter space
     param_space = ParameterSpace(args.get_reservoir_params())
+
+    # Experiment
+    xp = ResultManager(args.get_value('name'), args.get_value('description'), param_space, args.get_n_samples(),
+                       args.get_fold())
 
     # Tokenizer
     if args.get_value("tokenizer") == "nltk":
