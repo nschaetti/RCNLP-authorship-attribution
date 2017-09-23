@@ -82,6 +82,8 @@ if __name__ == "__main__":
 
         # For each sample
         for n in range(args.get_n_samples()):
+            print(u"Sample {}".format(n))
+
             # Create ESN text classifier
             classifier = nsNLP.esn_models.ESNTextClassifier.create\
             (
@@ -140,7 +142,7 @@ if __name__ == "__main__":
             # end for
 
             # Average
-            print(u"\tCV success rate: {}".format(np.average(average_k_fold)))
+            print(u"\tCV success rate for sample {} : {}".format(n, np.average(average_k_fold)))
 
             # Add
             average_sample = np.append(average_sample, [np.average(average_k_fold)])
