@@ -88,6 +88,8 @@ class ArgumentBuilder(object):
         self._parser.add_argument("--lang", type=str, help="Tokenizer language parameters", default='en')
 
         # Experiment output parameters
+        self._parser.add_argument("--name", type=str, help="Experiment's name", required=True)
+        self._parser.add_argument("--description", type=str, help="Experiment's description", required=True)
         self._parser.add_argument("--output", type=str, help="Experiment's output directory", required=True)
         self._parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?",
                                   default=False)
