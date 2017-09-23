@@ -44,12 +44,15 @@ if __name__ == "__main__":
     # Corpus
     reteursC50 = Corpus(args.get_dataset())
 
+    # Params
+    reservoir_params = args.get_reservoir_params()
+
     # Parameter space
-    param_space = ParameterSpace(args.get_reservoir_params())
+    param_space = ParameterSpace(reservoir_params)
 
     # Experiment
-    xp = ResultManager(args.get_value('name'), args.get_value('description'), param_space, args.get_n_samples(),
-                       args.get_fold())
+    xp = ResultManager(args.get_value('name'), args.get_value('description'), reservoir_params, args.get_n_samples(),
+                       args.get_fold(), verbose=True)
 
     # Tokenizer
     if args.get_value("tokenizer") == "nltk":
@@ -92,7 +95,7 @@ if __name__ == "__main__":
         for n in range(args.get_n_samples()):
             # Set sample
             xp.set_sample_state(n)
-            print(u"Sample {}".format(n))
+            #print(u"Sample {}".format(n))
 
             # Create ESN text classifier
             classifier = nsNLP.esn_models.ESNTextClassifier.create\
@@ -110,7 +113,7 @@ if __name__ == "__main__":
             )
 
             # Print classifier
-            print(classifier)
+            #print(classifier)
 
             # 10 fold cross validation
             cross_validation = CrossValidation(authors)
@@ -148,7 +151,7 @@ if __name__ == "__main__":
 
                 # Print success rate
                 xp.add_result(successes / float(len(test_set)))
-                print(u"\t\tK-{} Success rate: {}".format(k+1, successes / float(len(test_set))))
+                #print(u"\t\tK-{} Success rate: {}".format(k+1, successes / float(len(test_set))))
                 average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
 
                 # Reset classifier
@@ -156,7 +159,7 @@ if __name__ == "__main__":
             # end for
 
             # Average
-            print(u"\tCV success rate for sample {} : {}".format(n, np.average(average_k_fold)))
+                #print(u"\tCV success rate for sample {} : {}".format(n, np.average(average_k_fold)))
 
             # Add
             average_sample = np.append(average_sample, [np.average(average_k_fold)])
@@ -166,7 +169,7 @@ if __name__ == "__main__":
         # end for
 
         # Average
-        print(u"Overall success rate: {}".format(np.average(average_sample)))
+        #print(u"Overall success rate: {}".format(np.average(average_sample)))
     # end for
 
     # Save experiment results
