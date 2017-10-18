@@ -357,12 +357,10 @@ class ResultManager(object):
         :param data:
         :return:
         """
-        print(u"Test")
         plt.hist(data)
         plt.title(title)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
-        plt.show()
         plt.savefig(filename + u".png")
     # end _save_histogram
 
