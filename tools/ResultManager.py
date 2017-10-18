@@ -24,6 +24,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import codecs
+import pickle
+import datetime
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 # Manage and save results
@@ -33,12 +38,13 @@ class ResultManager(object):
     """
 
     # Constructor
-    def __init__(self, name, description, params_dict, n_samples, k=10, verbose=False):
+    def __init__(self, output_dir, name, description, params_dict, n_samples, k=10, verbose=False):
         """
         Constructor
         :param params_dict:
         """
         # Properties
+        self._output_dir = output_dir
         self._name = name
         self._description = description
         self._params_dict = params_dict
@@ -48,6 +54,7 @@ class ResultManager(object):
         self._sample = 0
         self._n_dim = len(params_dict.keys()) + 2
         self._verbose = verbose
+        self._objects = list()
 
         # Param to dimension
         self._param2dim = dict()
@@ -69,10 +76,19 @@ class ResultManager(object):
         # Generate result matrix
         self._result_matrix = self._generate_matrix()
 
+        # Create directory
+        self._xp_dir = self._create_directory()
+
+        # Open the output file
+        self._output_file = self._open_log_file(os.path.join(self._xp_dir, u"output.log"))
+
+        # Write log header
+        self._write_log_header()
+
         # Log
         if self._verbose:
-            print(u"Starting experiment {}".format(name))
-            print(u"Result matrix is of dimension {}".format(self._n_dim))
+            self._write_log(u"Starting experiment {}".format(name))
+            self._write_log(u"Result matrix is of dimension {}".format(self._n_dim))
         # end if
     # end __init__
 
@@ -89,7 +105,7 @@ class ResultManager(object):
         :return:
         """
         if self._verbose:
-            print(u"\tChanging param state to {}".format(pos))
+            self._write_log(u"\tChanging param state to {}".format(pos))
         # end if
 
         # Params
@@ -106,7 +122,7 @@ class ResultManager(object):
         :return:
         """
         if self._verbose:
-            print(u"\t\tChanging sample state to {}".format(n_sample))
+            self._write_log(u"\t\tChanging sample state to {}".format(n_sample))
         # end if
 
         self._sample = n_sample
@@ -120,7 +136,7 @@ class ResultManager(object):
         :return:
         """
         if self._verbose:
-            print(u"\t\t\tChanging fold state to {}".format(k))
+            self._write_log(u"\t\t\tChanging fold state to {}".format(k))
         # end if
 
         self._fold = k
@@ -156,7 +172,7 @@ class ResultManager(object):
 
         # Verbose
         if self._verbose:
-            print(u"\t\t\t\tSuccess rate {}".format(success_rate))
+            self._write_log(u"\t\t\t\tSuccess rate {}".format(success_rate))
         # end if
 
         # Set
@@ -164,16 +180,16 @@ class ResultManager(object):
     # end add_result
 
     # Save results
-    def save(self, output_dir):
+    def save(self):
         """
         Save results
-        :param output_dir:
         :return:
         """
-        # Verbose
-        if self._verbose:
-            print(u"Saving results to {}".format(output_dir))
-        # end if
+        # Save overall success rate
+        self._write_log(u"Overall success rate: {}".format(np.average(self._result_matrix)))
+
+        # Save result matrix
+        self.save_object(u"result_matrix", self._result_matrix)
 
         # Save global data
         self._save_global()
@@ -188,37 +204,91 @@ class ResultManager(object):
         # end for
     # end save
 
-    # Add object
-    def add_object(self, obj):
+    # Save object
+    def save_object(self, name, obj):
         """
         Add object
-        :param obj:
+        :param name: Object's name
+        :param obj: Object
         :return:
         """
-        pass
+        # Write
+        with open(os.path.join(self._xp_dir, name + u".p"), 'wb') as f:
+            pickle.dump(obj=obj, file=f)
+        # end with
     # end add_object
 
     ###########################################
     # Private
     ###########################################
 
+    # Write log header
+    def _write_log_header(self):
+        """
+        Write log header
+        :return:
+        """
+        self._write_log(u"Experience name : {}".format(self._name))
+        self._write_log(u"Description : {}".format(self._description))
+        self._write_log(u"Date : {}".format(datetime.datetime.utcnow()))
+    # end _write_log_header
+
+    # Create directory
+    def _create_directory(self):
+        """
+        Create the experience directory
+        :return:
+        """
+        # XP directory
+        self._xp_dir = os.path.join(self._output_dir, self._name)
+
+        # Create if necessary
+        if not os.path.exists(self._xp_dir):
+            os.mkdir(self._xp_dir)
+        # end if
+
+        return self._xp_dir
+    # end _create_directory
+
+    # Write log
+    def _write_log(self, text):
+        """
+        Write log
+        :param text:
+        :return:
+        """
+        print(text)
+        self._output_file.write(text + u"\n")
+    # end _write_log
+
+    # Open the output log file
+    def _open_log_file(self, filename):
+        """
+        Open the output log file
+        :param filename:
+        :return:
+        """
+        return codecs.open(filename, 'w', encoding='utf-8')
+    # end _open_log_file
+
     # Save global data
-    def _save_global(self, output_dir):
+    def _save_global(self):
         """
         Save global data
         :return:
         """
-        pass
+        # Save
+        self._save_histogram(u"overall_results", self._result_matrix.flatten(), u"Overall results", u"Success rate", u"Proportion")
     # end _save_global
 
     # Save param data
-    def _save_param_data(self, param, output_dir):
+    def _save_param_data(self, param):
         """
         Save param data
         :return:
         """
         # Create directory
-        os.mkdir(os.path.join(output_dir, param))
+        os.mkdir(os.path.join(self._xp_dir, param))
 
         # Param dimension
         dim = self._param2dim[param]
@@ -279,5 +349,21 @@ class ResultManager(object):
 
         return np.zeros(dims)
     # end _generate_matrix
+
+    # Save histogram
+    def _save_histogram(self, filename, data, title, xlabel=u"", ylabel=u""):
+        """
+        Save histogram
+        :param data:
+        :return:
+        """
+        print(u"Test")
+        plt.hist(data)
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.show()
+        plt.savefig(filename + u".png")
+    # end _save_histogram
 
 # end
