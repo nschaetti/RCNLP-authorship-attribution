@@ -25,6 +25,7 @@
 import nsNLP
 import numpy as np
 from tools.ResultManager import ResultManager
+from tools.functions import create_tokenizer
 from parameters.ArgumentBuilder import ArgumentBuilder
 from parameters.ParameterSpace import ParameterSpace
 from corpus.CrossValidation import CrossValidation
@@ -51,17 +52,19 @@ if __name__ == "__main__":
     param_space = ParameterSpace(reservoir_params)
 
     # Experiment
-    xp = ResultManager(args.get_value('name'), args.get_value('description'), reservoir_params, args.get_n_samples(),
-                       args.get_fold(), verbose=True)
+    xp = ResultManager\
+    (
+        args.get_output(),
+        args.get_value('name'),
+        args.get_value('description'),
+        reservoir_params,
+        args.get_n_samples(),
+        args.get_fold(),
+        verbose=True
+    )
 
     # Tokenizer
-    if args.get_value("tokenizer") == "nltk":
-        tokenizer = nsNLP.tokenization.NLTKTokenizer()
-    elif args.get_value("tokenizer") == "spacy":
-        tokenizer = nsNLP.tokenization.SpacyTokenizer()
-    else:
-        tokenizer = nsNLP.tokenization.SpacyTokenizer(original=True)
-    # end if
+    tokenizer = create_tokenizer(args.get_value("tokenizer"), args.get_input_params()[0][0])
 
     # Author list
     authors = reteursC50.get_authors()[:args.get_n_authors()]
@@ -73,6 +76,9 @@ if __name__ == "__main__":
 
     # Create W matrix
     w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
+
+    # Save classifier
+    xp.save_object(u"w", w)
 
     # Iterate
     for space in param_space:
@@ -111,9 +117,6 @@ if __name__ == "__main__":
                 use_sparse_matrix=True if converter_desc == 'oh' else False,
                 w=w if args.keep_W() else None
             )
-
-            # Print classifier
-            #print(classifier)
 
             # 10 fold cross validation
             cross_validation = CrossValidation(authors)
@@ -159,7 +162,7 @@ if __name__ == "__main__":
             # end for
 
             # Average
-                #print(u"\tCV success rate for sample {} : {}".format(n, np.average(average_k_fold)))
+            #print(u"\tCV success rate for sample {} : {}".format(n, np.average(average_k_fold)))
 
             # Add
             average_sample = np.append(average_sample, [np.average(average_k_fold)])
@@ -173,5 +176,5 @@ if __name__ == "__main__":
     # end for
 
     # Save experiment results
-    xp.save(args.get_output())
+    xp.save()
 # end if
