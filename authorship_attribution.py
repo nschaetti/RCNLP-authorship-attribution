@@ -78,7 +78,12 @@ if __name__ == "__main__":
     w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
 
     # Save classifier
-    xp.save_object(u"w", w)
+    if args.keep_W():
+        xp.save_object(u"w", w)
+    # end if
+
+    # W index
+    w_index = 0
 
     # Iterate
     for space in param_space:
@@ -101,7 +106,6 @@ if __name__ == "__main__":
         for n in range(args.get_n_samples()):
             # Set sample
             xp.set_sample_state(n)
-            #print(u"Sample {}".format(n))
 
             # Create ESN text classifier
             classifier = nsNLP.esn_models.ESNTextClassifier.create\
@@ -117,6 +121,11 @@ if __name__ == "__main__":
                 use_sparse_matrix=True if converter_desc == 'oh' else False,
                 w=w if args.keep_W() else None
             )
+
+            # Save w matrix
+            if not args.keep_W():
+                xp.save_object(u"w_{}".format(w_index), classifier.get_w(), info=u"{}".format(space))
+            # end if
 
             # 10 fold cross validation
             cross_validation = CrossValidation(authors)
@@ -154,15 +163,11 @@ if __name__ == "__main__":
 
                 # Print success rate
                 xp.add_result(successes / float(len(test_set)))
-                #print(u"\t\tK-{} Success rate: {}".format(k+1, successes / float(len(test_set))))
                 average_k_fold = np.append(average_k_fold, [successes / float(len(test_set))])
 
                 # Reset classifier
                 classifier.reset()
             # end for
-
-            # Average
-            #print(u"\tCV success rate for sample {} : {}".format(n, np.average(average_k_fold)))
 
             # Add
             average_sample = np.append(average_sample, [np.average(average_k_fold)])
@@ -171,8 +176,8 @@ if __name__ == "__main__":
             del classifier
         # end for
 
-        # Average
-        #print(u"Overall success rate: {}".format(np.average(average_sample)))
+        # W index
+        w_index += 1
     # end for
 
     # Save experiment results
