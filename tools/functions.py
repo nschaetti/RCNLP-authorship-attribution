@@ -15,8 +15,8 @@ def create_tokenizer(tokenizer_type, converter_type):
     :return:
     """
     # Check converter
-    if converter_type == "wv" and tokenizer_type != "spacy_wv":
-        sys.stderr.write(u"Only Spacy tokenizer is possible for word vector!\n")
+    if (converter_type == "wv" or converter_type == "pos" or converter_type == "tag") and tokenizer_type != "spacy_wv":
+        sys.stderr.write(u"Only Spacy tokenizer is possible for word vector, tag or POS!\n")
         exit()
     # end if
 
