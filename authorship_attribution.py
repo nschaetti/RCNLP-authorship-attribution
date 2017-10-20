@@ -60,7 +60,7 @@ if __name__ == "__main__":
         reservoir_params,
         args.get_n_samples(),
         args.get_fold(),
-        verbose=True
+        verbose=args.verbose()
     )
 
     # Tokenizer
@@ -94,7 +94,14 @@ if __name__ == "__main__":
         input_scaling = space['input_scaling']
         input_sparsity = space['input_sparsity']
         spectral_radius = space['spectral_radius']
-        converter_desc = args.get_input_params()[0][0]
+        converter_desc = space['converters']
+
+        # Choose the right tokenizer
+        if converter_desc == "wv" or converter_desc == "pos" or converter_desc == "tag":
+            tokenizer = create_tokenizer("spacy_wv", converter_desc)
+        else:
+            tokenizer = create_tokenizer("nltk", converter_desc)
+        # end if
 
         # Set experience state
         xp.set_state(space)
@@ -145,7 +152,7 @@ if __name__ == "__main__":
                 # end for
 
                 # Train
-                classifier.finalize(verbose=args.verbose())
+                classifier.finalize(verbose=False)
 
                 # Counters
                 successes = 0.0
