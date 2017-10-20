@@ -21,17 +21,17 @@
 #
 #
 
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import codecs
 import pickle
 import datetime
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 from sklearn.utils.extmath import cartesian
 import csv
 import scipy
+import sys
 
 
 # Manage and save results
@@ -41,7 +41,7 @@ class ResultManager(object):
     """
 
     # Constructor
-    def __init__(self, output_dir, name, description, params_dict, n_samples, k=10, verbose=False):
+    def __init__(self, output_dir, name, description, params_dict, n_samples, k=10, verbose=2):
         """
         Constructor
         :param params_dict:
@@ -92,11 +92,9 @@ class ResultManager(object):
         self._csv_results = self._create_csv_results(os.path.join(self._xp_dir, u"output.csv"))
 
         # Log
-        if self._verbose:
-            self._write_log(u"Starting experiment {}".format(name))
-            self._write_log(u"Result matrix is of dimension {}".format(self._n_dim))
-            self._write_log(u"Result matrix is of shape {}".format(self._result_matrix.shape))
-        # end if
+        self._write_log(u"Starting experiment {}".format(name), log_level=0)
+        self._write_log(u"Result matrix is of dimension {}".format(self._n_dim), log_level=0)
+        self._write_log(u"Result matrix is of shape {}".format(self._result_matrix.shape), log_level=0)
     # end __init__
 
     ###########################################
@@ -112,7 +110,7 @@ class ResultManager(object):
         :return:
         """
         if self._verbose:
-            self._write_log(u"\tChanging param state to {}".format(pos))
+            self._write_log(u"\tChanging param state to {}".format(pos), log_level=1)
         # end if
 
         # Params
@@ -129,7 +127,7 @@ class ResultManager(object):
         :return:
         """
         if self._verbose:
-            self._write_log(u"\t\tChanging sample state to {}".format(n_sample))
+            self._write_log(u"\t\tChanging sample state to {}".format(n_sample), log_level=2)
         # end if
 
         self._sample = n_sample
@@ -143,7 +141,7 @@ class ResultManager(object):
         :return:
         """
         if self._verbose:
-            self._write_log(u"\t\t\tChanging fold state to {}".format(k))
+            self._write_log(u"\t\t\tChanging fold state to {}".format(k), log_level=3)
         # end if
 
         self._fold = k
@@ -183,13 +181,13 @@ class ResultManager(object):
         # Verbose
         if self._verbose:
             # Write fold success rate
-            self._write_log(u"\t\t\t\tSuccess rate {}".format(success_rate))
+            self._write_log(u"\t\t\t\tSuccess rate {}".format(success_rate), log_level=3)
 
             # Last fold?
             if self._fold + 1 == self._k:
                 k_pos = element_pos
                 k_pos[-1] = slice(None)
-                self._write_log(u"\t\t\t{}-fold success rate {}".format(self._k, np.average(self._result_matrix[tuple(k_pos)])))
+                self._write_log(u"\t\t\t{}-fold success rate {}".format(self._k, np.average(self._result_matrix[tuple(k_pos)])), log_level=2)
 
                 # Last sample?
                 if self._sample + 1 == self._n_samples:
@@ -199,8 +197,8 @@ class ResultManager(object):
                     folds_perfs = np.average(self._result_matrix[tuple(n_pos)], axis=-1).flatten()
 
                     # Print
-                    self._write_log(u"\t\t{} samples success rate {} +- {}".format(self._n_samples, np.average(folds_perfs), np.std(folds_perfs)))
-                    self._write_log(u"\t\tMax sample success rate {}".format(np.max(folds_perfs)))
+                    self._write_log(u"\t\t{} samples success rate {} +- {}".format(self._n_samples, np.average(folds_perfs), np.std(folds_perfs)), log_level=1)
+                    self._write_log(u"\t\tMax sample success rate {}".format(np.max(folds_perfs)), log_level=1)
                 # end if
             # end if
         # end if
@@ -216,7 +214,7 @@ class ResultManager(object):
         :return:
         """
         # Save overall success rate
-        self._write_log(u"\tOverall success rate: {}".format(np.average(self._result_matrix)))
+        self._write_log(u"\tOverall success rate: {}".format(np.average(self._result_matrix)), log_level=0)
 
         # Save result matrix
         self.save_object(u"result_matrix", self._result_matrix)
@@ -296,9 +294,10 @@ class ResultManager(object):
         Write log header
         :return:
         """
-        self._write_log(u"Experience name : {}".format(self._name))
-        self._write_log(u"Description : {}".format(self._description))
-        self._write_log(u"Date : {}".format(datetime.datetime.utcnow()))
+        self._write_log(u"Arguments : {}".format(sys.argv), log_level=0)
+        self._write_log(u"Experience name : {}".format(self._name), log_level=0)
+        self._write_log(u"Description : {}".format(self._description), log_level=0)
+        self._write_log(u"Date : {}".format(datetime.datetime.utcnow()), log_level=0)
     # end _write_log_header
 
     # Create directory
@@ -327,13 +326,15 @@ class ResultManager(object):
     # end _create_directory
 
     # Write log
-    def _write_log(self, text):
+    def _write_log(self, text, log_level):
         """
         Write log
         :param text:
         :return:
         """
-        print(text)
+        if log_level <= self._verbose:
+            print(text)
+        # end if
         self._output_file.write(text + u"\n")
     # end _write_log
 
@@ -357,22 +358,24 @@ class ResultManager(object):
         sample_results = np.average(self._result_matrix, axis=-1)
 
         # Save
-        self._save_histogram(os.path.join(self._xp_dir, u"overall_results.png"), self._result_matrix.flatten(), u"Overall results", u"Result", u"Proportion")
+        self._save_histogram(os.path.join(self._xp_dir, u"overall_results.png"), self._result_matrix.flatten(),
+                             u"Overall results", u"Result", u"Proportion")
 
         # Save result by samples
-        self._save_histogram(os.path.join(self._xp_dir, u"samples_results.png"), sample_results.flatten(), u"Samples results", u"Result", u"Proportion")
+        self._save_histogram(os.path.join(self._xp_dir, u"samples_results.png"), sample_results.flatten(),
+                             u"Samples results", u"Result", u"Proportion")
 
         # Show max samples results
         max_result, max_std, max_params = self._get_max_parameters()
-        self._write_log(u"\tBest perf with {} +- {} : {}".format(max_result, max_std, max_params))
+        self._write_log(u"\tBest perf with {} +- {} : {}".format(max_result, max_std, max_params), log_level=0)
 
         # Show overall samples results
         max_result, max_std, max_params = self._get_max_parameters(samples=False)
-        self._write_log(u"\tBest perf with {} +- {} : {}".format(max_result, max_std, max_params))
+        self._write_log(u"\tBest perf with {} +- {} : {}".format(max_result, max_std, max_params), log_level=0)
     # end _save_global
 
     # Get max parameters
-    def _get_max_parameters(self, samples=True):
+    def _get_max_parameters(self, samples=True, select_dim=None, select_value=None):
         """
         Get parameters with maximum results
         :return:
@@ -394,8 +397,12 @@ class ResultManager(object):
 
         # For each dimension
         for dim in range(self._n_dim - n_remove):
-            # Size of this dim
-            pos_array.append(np.arange(0, self._result_matrix.shape[dim]))
+            if select_dim is not None and select_value is not None and dim == select_dim:
+                pos_array.append([select_value])
+            else:
+                # Size of this dim
+                pos_array.append(np.arange(0, self._result_matrix.shape[dim]))
+            # end if
         # end for
 
         # Cartesian product
@@ -453,16 +460,28 @@ class ResultManager(object):
     # end _pos_to_dict
 
     # Save param data
-    def _save_param_data(self, param):
+    def _save_param_data(self, param, sub_dir=u"", pos_dim=None, pos_value=None):
         """
         Save param data
         :return:
         """
+        # Get data directory
+        if sub_dir != u"":
+            param_path = os.path.join(sub_dir, param)
+        else:
+            param_path = os.path.join(self._xp_dir, param)
+        # end if
+        print(param_path)
         # Create directory
-        param_path = os.path.join(self._xp_dir, param)
         if not os.path.exists(param_path):
             os.mkdir(param_path)
         # end if
+
+        # Value type
+        value_type = 'numeric'
+
+        # Open the parameter report
+        param_report = codecs.open(os.path.join(param_path, u"report.txt"), 'w', encoding='utf-8')
 
         # Param dimension
         dim = self._param2dim[param]
@@ -485,10 +504,23 @@ class ResultManager(object):
         value2perf = dict()
         value2std = dict()
 
+        # All samples
+        all_samples = np.array([])
+
         # Sample per values
-        for value in values:
+        for index, value in enumerate(values):
+            # Value type
+            if type(value) == str or type(value) == unicode:
+                value_type = 'str'
+            # end if
+
             # All range
             position_vector = [slice(None)] * self._n_dim
+
+            # Restrict to upper level (if needed)
+            if pos_dim is not None and pos_value is not None:
+                position_vector[pos_dim] = pos_value
+            # end if
 
             # Value position
             value_pos = self._value2pos[param][value]
@@ -502,9 +534,13 @@ class ResultManager(object):
             # Samples perfs
             samples_results = np.average(samples, axis=-1).flatten()
 
+            # Save histogram for this value
+            self._save_histogram(os.path.join(param_path, u"hist_" + unicode(value) + u".png"), samples_results,
+                                 u"Histogram " + unicode(value), u"Result", u"%")
+
             # Add to dict
-            value_samples[value] = samples
-            value_samples[value].shape = (self._n_samples, self._k)
+            value_samples[value] = np.ascontiguousarray(samples)
+            value_samples[value].shape = (-1, self._k)
             value2sample[value] = samples_results
 
             # Add to plot
@@ -514,10 +550,50 @@ class ResultManager(object):
             # Value to perf
             value2perf[value] = np.average(samples_results)
             value2std[value] = np.std(samples_results)
+
+            # Write best perf in the report
+            max_result, max_std, max_params = self._get_max_parameters(samples=True, select_dim=dim, select_value=value_pos)
+            param_report.write(u"Best perf with {} +- {} : {}\n\n".format(max_result, max_std, max_params))
+
+            # Add to all samples
+            if all_samples.size == 0:
+                all_samples = samples_results
+            else:
+                all_samples = np.vstack((all_samples, samples_results))
+            # end if
+
+            # Add information with other params if needed
+            if pos_dim is None and pos_value is None:
+                for sub_param in self._params_dict.keys():
+                    if param != sub_param and len(self._params_dict[sub_param]) > 1:
+                        # Path
+                        sub_param_path = os.path.join(param_path, unicode(value))
+
+                        # Create directory
+                        if not os.path.exists(sub_param_path):
+                            os.mkdir(sub_param_path)
+                        # end if
+
+                        # Recursive call!
+                        self._save_param_data(sub_param, sub_dir=sub_param_path, pos_dim=self._param2dim[param],
+                                              pos_value=self._value2pos[param][value])
+                    # end if
+                # end for
+            # end if
         # end for
 
         # Save the plot
-        self._save_plot(os.path.join(param_path, u"plot.png"), values, plot_results, plot_std, u"Results vs {}".format(param), param, u"Results")
+        if value_type == 'numeric':
+            self._save_plot(os.path.join(param_path, u"plot.png"), values, plot_results, plot_std,
+                            u"Results vs {}".format(param), param, u"Results")
+        else:
+            samples_per_values = np.zeros((all_samples.shape[1], all_samples.shape[0]))
+            for i in np.arange(0, all_samples.shape[1]):
+                samples_per_values[i, :] = all_samples[:, i].flatten()
+            # end for
+            self._save_boxplot(os.path.join(param_path, u"plot.png"), samples_per_values, values,
+                               u"Results vs {}".format(param), param, u"Results")
+        # end if
 
         # Write param CSV
         self._write_param_csv(os.path.join(param_path, u"samples.csv"), value2sample)
@@ -551,9 +627,8 @@ class ResultManager(object):
             t_tests[value1] = dict()
             for value2 in values:
                 if value1 != value2:
-                    #print(value2samples[value1].flatten())
-                    #print(value2samples[value2].flatten())
-                    t_tests[value1][value2] = scipy.stats.ttest_rel(value2samples[value1].flatten(), value2samples[value2].flatten()).pvalue
+                    t_tests[value1][value2] = scipy.stats.ttest_rel(value2samples[value1].flatten(),
+                                                                    value2samples[value2].flatten()).pvalue
                 else:
                     t_tests[value1][value2] = 0.0
                 # end if
@@ -617,6 +692,25 @@ class ResultManager(object):
         plt.close()
     # end _save_plot
 
+    # Save boxplot
+    def _save_boxplot(self, filename, data, labels, title, xlabel=u"", ylabel=u""):
+        """
+        Save boxplot
+        :param filename:
+        :param data:
+        :param title:
+        :param xlabel:
+        :param ylabel:
+        :return:
+        """
+        plt.boxplot(x=data, labels=labels)
+        plt.title(title)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.savefig(filename)
+        plt.close()
+    # end _save_scatterplot
+
     # Generate result matrix
     def _generate_matrix(self):
         """
@@ -647,7 +741,7 @@ class ResultManager(object):
         :param data:
         :return:
         """
-        plt.hist(data)
+        plt.hist(data, normed=True)
         plt.title(title)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
