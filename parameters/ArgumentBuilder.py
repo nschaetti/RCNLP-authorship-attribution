@@ -94,7 +94,7 @@ class ArgumentBuilder(object):
         self._parser.add_argument("--sentence", action='store_true', help="Test sentence classification rate?",
                                   default=False)
         self._parser.add_argument("--samples", type=int, help="Number of different reservoir to test", default=1)
-        self._parser.add_argument("--verbose", action='store_true', help="Verbose mode", default=False)
+        self._parser.add_argument("--verbose", type=int, help="Verbose level", default=2)
 
         # Parse arguments
         self._args = self._parser.parse_args()
@@ -200,7 +200,7 @@ class ArgumentBuilder(object):
         params_dict = dict()
 
         # Reservoir params
-        params = ["reservoir_size", "spectral_radius", "leak_rate", "input_scaling", "input_sparsity", "w_sparsity"]
+        params = ["reservoir_size", "spectral_radius", "leak_rate", "input_scaling", "input_sparsity", "w_sparsity", "converters"]
 
         # For each param
         for param in params:
@@ -255,32 +255,46 @@ class ArgumentBuilder(object):
         :param value:
         :return:
         """
+        # Value type
+        value_type = 'numeric'
+
         # Values array
         values = np.array([])
+        values_str = list()
 
         # Split for addition
         additions = value.split(u'+')
 
         # For each addition
         for add in additions:
-            if ',' in add:
-                # Split by params
-                params = add.split(',')
+            try:
+                if ',' in add:
+                    # Split by params
+                    params = add.split(',')
 
-                # Params
-                start = float(params[0])
-                end = float(params[1]) + 0.00001
-                step = float(params[2])
+                    # Params
+                    start = float(params[0])
+                    end = float(params[1]) + 0.00001
+                    step = float(params[2])
 
-                # Add values
-                values = np.append(values, np.arange(start, end, step))
-            else:
-                # Add value
-                values = np.append(values, np.array([float(add)]))
-            # end if
+                    # Add values
+                    values = np.append(values, np.arange(start, end, step))
+                else:
+                    # Add value
+                    values = np.append(values, np.array([float(add)]))
+                # end if
+                value_type = 'numeric'
+            except ValueError:
+                values_str.append(add)
+                value_type = 'str'
+            # end try
         # end for
 
-        return np.sort(values)
+        if value_type == 'numeric':
+            return np.sort(values)
+        else:
+            return values_str
+        # end if
     # end _interpret_value
 
 # end ArgumentBuilder
