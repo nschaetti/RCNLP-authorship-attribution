@@ -22,7 +22,7 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from parameters.ArgumentBuilder import ArgumentBuilder
+import nsNLP
 
 
 ####################################################
@@ -31,14 +31,30 @@ from parameters.ArgumentBuilder import ArgumentBuilder
 
 if __name__ == "__main__":
 
-    # Arguments
-    args = ArgumentBuilder(desc=u"Argument test", set_authors=2)
+    # Argument builder
+    args = nsNLP.tools.ArgumentBuilder(desc=u"Argument test")
+
+    # Add arguments
+    args.add_argument(command="--dataset", name="dataset", type=str,
+                      help="JSON file with the file description for each authors", required=True, extended=False)
+    args.add_argument(command="--reservoir-size", name="reservoir_size", type=float, help="Reservoir's size",
+                      required=True, extended=True)
+    args.add_argument(command="--spectral-radius", name="spectral_radius", type=float, help="Spectral radius",
+                      required=True, extended=True)
+
+    # Parse arguments
     args.parse()
-    print(args.get_value("reservoir_size"))
-    print(args.get_reservoir_params())
-    print(args.get_input_params())
-    print(args.get_dataset())
-    print(args.get_dataset_size())
-    print(args.get_tokenizer_params())
+
+    # Print arguments
+    print(args.reservoir_size)
+    print(args.get_space())
+
+    # Parameter space
+    param_space = nsNLP.tools.ParameterSpace(args.get_space())
+
+    # Go through space
+    for param_point in param_space:
+        print(param_point)
+    # end for
 
 # end if
