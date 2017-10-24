@@ -26,8 +26,6 @@ import nsNLP
 import numpy as np
 from tools.ResultManager import ResultManager
 from tools.functions import create_tokenizer
-from parameters.ArgumentBuilder import ArgumentBuilder
-from parameters.ParameterSpace import ParameterSpace
 from corpus.CrossValidation import CrossValidation
 from corpus.Corpus import Corpus
 
@@ -38,47 +36,96 @@ from corpus.Corpus import Corpus
 # Main function
 if __name__ == "__main__":
 
-    # Arguments
-    args = ArgumentBuilder(desc=u"Argument test", set_authors=2)
+    # Argument builder
+    args = nsNLP.tools.ArgumentBuilder(desc=u"Argument test")
+
+    # Dataset arguments
+    args.add_argument(command="--dataset", name="dataset", type=str,
+                      help="JSON file with the file description for each authors", required=True, extended=False)
+    args.add_argument(command="--dataset-size", name="dataset_size", type=float,
+                      help="Ratio of the data set to use (100 percent by default)", extended=False, default=100.0)
+    args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
+
+    # Author parameters
+    args.add_argument(command="--n-authors", name="n_authors", type=int,
+                      help="Number of authors to include in the test", default=15, extended=False)
+    for i in range(15):
+        args.add_argument(command="--author{}".format(i), name="author{}".format(i), type=str,
+                          help="{}th author to test".format(i), extended=False)
+    # end for
+
+    # ESN arguments
+    args.add_argument(command="--reservoir-size", name="reservoir_size", type=float, help="Reservoir's size",
+                      required=True, extended=True)
+    args.add_argument(command="--spectral-radius", name="spectral_radius", type=float, help="Spectral radius",
+                      default="1.0", extended=True)
+    args.add_argument(command="--leak-rate", name="leak_rate", type=str, help="Reservoir's leak rate", extended=True,
+                      default="1.0")
+    args.add_argument(command="--input-scaling", name="input_scaling", type=str, help="Input scaling", extended=True,
+                      default="0.5")
+    args.add_argument(command="--input-sparsity", name="input_sparsity", type=str, help="Input sparsity", extended=True,
+                      default="0.05")
+    args.add_argument(command="--w-sparsity", name="w_sparsity", type=str, help="W sparsity", extended=True,
+                      default="0.05")
+    args.add_argument(command="--converters", name="converters", type=str,
+                      help="The text converters to use (fw, pos, tag, wv, oh)", default='oh', extended=True)
+    args.add_argument(command="--pca-path", name="pca_path", type=str, help="PCA model to load", default=None,
+                      extended=False)
+    args.add_argument(command="--keep-w", name="keep_w", action='store_true', help="Keep W matrix", default=False,
+                      extended=False)
+
+    # Tokenizer and word vector parameters
+    args.add_argument(command="--tokenizer", name="tokenizer", type=str,
+                      help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
+    args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters", default='en',
+                      extended=False)
+
+    # Experiment output parameters
+    args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
+    args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
+                      extended=False, required=True)
+    args.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
+                      extended=False)
+    args.add_argument(command="--sentence", name="sentence", action='store_true',
+                      help="Test sentence classification rate?", default=False, extended=False)
+    args.add_argument(command="--n-samples", name="n_samples", type=int, help="Number of different reservoir to test",
+                      default=1, extended=False)
+    args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose level", default=2, extended=False)
+
+    # Parse arguments
     args.parse()
 
     # Corpus
-    reteursC50 = Corpus(args.get_dataset())
-
-    # Params
-    reservoir_params = args.get_reservoir_params()
+    reteursC50 = Corpus(args.dataset)
 
     # Parameter space
-    param_space = ParameterSpace(reservoir_params)
+    param_space = nsNLP.tools.ParameterSpace(args.get_space())
 
     # Experiment
     xp = ResultManager\
     (
-        args.get_output(),
-        args.get_value('name'),
-        args.get_value('description'),
-        reservoir_params,
-        args.get_n_samples(),
-        args.get_fold(),
-        verbose=args.verbose()
+        args.output,
+        args.name,
+        args.description,
+        args.get_space(),
+        args.n_samples,
+        args.k,
+        verbose=args.verbose
     )
 
-    # Tokenizer
-    tokenizer = create_tokenizer(args.get_value("tokenizer"), args.get_input_params()[0][0])
-
     # Author list
-    authors = reteursC50.get_authors()[:args.get_n_authors()]
-    author_list = reteursC50.get_authors_list()[:args.get_n_authors()]
+    authors = reteursC50.get_authors()[:args.n_authors]
+    author_list = reteursC50.get_authors_list()[:args.n_authors]
 
     # First params
-    rc_size = int(args.get_reservoir_params()['reservoir_size'][0])
-    rc_w_sparsity = args.get_reservoir_params()['w_sparsity'][0]
+    rc_size = int(args.get_space()['reservoir_size'][0])
+    rc_w_sparsity = args.get_space()['w_sparsity'][0]
 
     # Create W matrix
     w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
 
     # Save classifier
-    if args.keep_W():
+    if args.keep_w:
         xp.save_object(u"w", w)
     # end if
 
@@ -110,7 +157,7 @@ if __name__ == "__main__":
         average_sample = np.array([])
 
         # For each sample
-        for n in range(args.get_n_samples()):
+        for n in range(args.n_samples):
             # Set sample
             xp.set_sample_state(n)
 
@@ -126,11 +173,11 @@ if __name__ == "__main__":
                 rc_w_sparsity=w_sparsity,
                 converter_desc=converter_desc,
                 use_sparse_matrix=True if converter_desc == 'oh' else False,
-                w=w if args.keep_W() else None
+                w=w if args.keep_w else None
             )
 
             # Save w matrix
-            if not args.keep_W():
+            if not args.keep_w:
                 xp.save_object(u"w_{}".format(w_index), classifier.get_w(), info=u"{}".format(space))
             # end if
 
