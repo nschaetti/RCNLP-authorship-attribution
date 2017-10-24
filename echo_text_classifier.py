@@ -102,7 +102,7 @@ if __name__ == "__main__":
     param_space = nsNLP.tools.ParameterSpace(args.get_space())
 
     # Experiment
-    xp = ResultManager\
+    xp = nsNLP.tools.ResultManager\
     (
         args.output,
         args.name,
@@ -116,6 +116,9 @@ if __name__ == "__main__":
     # Author list
     authors = reteursC50.get_authors()[:args.n_authors]
     author_list = reteursC50.get_authors_list()[:args.n_authors]
+
+    # Print authors
+    xp.write(u"Authors : {}".format(author_list), log_level=0)
 
     # First params
     rc_size = int(args.get_space()['reservoir_size'][0])
