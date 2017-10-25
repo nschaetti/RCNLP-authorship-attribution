@@ -30,6 +30,27 @@ from corpus.CrossValidation import CrossValidation
 from corpus.Corpus import Corpus
 
 ####################################################
+# Functions
+####################################################
+
+
+# Converter in
+def converter_in(converters_desc, converter):
+    """
+    Is the converter in the desc
+    :param converters_desc:
+    :param converter:
+    :return:
+    """
+    for converter_desc in converters_desc:
+        if converter in converter_desc:
+            return True
+        # end if
+    # end for
+    return False
+# end converter_in
+
+####################################################
 # Main function
 ####################################################
 
@@ -75,6 +96,8 @@ if __name__ == "__main__":
                       extended=False)
     args.add_argument(command="--aggregation", name="aggregation", type=str, help="Output aggregation method", extended=True,
                       default="average")
+    args.add_argument(command="--state-gram", name="state_gram", type=str, help="State-gram value",
+                      extended=True, default="1")
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
@@ -147,13 +170,16 @@ if __name__ == "__main__":
         input_sparsity = space['input_sparsity']
         spectral_radius = space['spectral_radius']
         converter_desc = space['converters']
-        aggregation = space['aggregation']
+        aggregation = space['aggregation'][0][0]
+        state_gram = space['state_gram']
 
         # Choose the right tokenizer
-        if converter_desc == "wv" or converter_desc == "pos" or converter_desc == "tag":
-            tokenizer = create_tokenizer("spacy_wv", converter_desc)
+        if converter_in(converter_desc, "wv") or \
+                converter_in(converter_desc, "pos") or \
+                converter_in(converter_desc, "tag"):
+            tokenizer = create_tokenizer("spacy_wv")
         else:
-            tokenizer = create_tokenizer("nltk", converter_desc)
+            tokenizer = create_tokenizer("nltk")
         # end if
 
         # Set experience state
@@ -178,9 +204,10 @@ if __name__ == "__main__":
                 rc_input_sparsity=input_sparsity,
                 rc_w_sparsity=w_sparsity,
                 converter_desc=converter_desc,
-                use_sparse_matrix=True if converter_desc == 'oh' else False,
+                use_sparse_matrix=True if converter_in(converter_desc, "oh") else False,
                 w=w if args.keep_w else None,
-                aggregation=aggregation
+                aggregation=aggregation,
+                state_gram=state_gram
             )
 
             # Save w matrix
