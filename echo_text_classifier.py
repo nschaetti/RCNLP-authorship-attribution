@@ -160,6 +160,9 @@ if __name__ == "__main__":
     # W index
     w_index = 0
 
+    # Last space
+    last_space = dict()
+
     # Iterate
     for space in param_space:
         # Params
@@ -266,6 +269,9 @@ if __name__ == "__main__":
 
         # W index
         w_index += 1
+
+        # Last space
+        last_space = space
     # end for
 
     # Save experiment results
