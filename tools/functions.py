@@ -8,18 +8,12 @@ import sys
 
 
 # Create tokenizer
-def create_tokenizer(tokenizer_type, converter_type):
+def create_tokenizer(tokenizer_type):
     """
     Create tokenizer
-    :param tokenizer: Tokenizer
+    :param tokenizer_type: Tokenizer
     :return:
     """
-    # Check converter
-    if (converter_type == "wv" or converter_type == "pos" or converter_type == "tag") and tokenizer_type != "spacy_wv":
-        sys.stderr.write(u"Only Spacy tokenizer is possible for word vector, tag or POS!\n")
-        exit()
-    # end if
-
     # Tokenizer
     if tokenizer_type == "nltk":
         tokenizer = nsNLP.tokenization.NLTKTokenizer()
