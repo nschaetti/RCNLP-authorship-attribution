@@ -73,6 +73,8 @@ if __name__ == "__main__":
                       extended=False)
     args.add_argument(command="--keep-w", name="keep_w", action='store_true', help="Keep W matrix", default=False,
                       extended=False)
+    args.add_argument(command="--aggregation", name="aggregation", type=str, help="Output aggregation method", extended=True,
+                      default="average")
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
@@ -145,6 +147,7 @@ if __name__ == "__main__":
         input_sparsity = space['input_sparsity']
         spectral_radius = space['spectral_radius']
         converter_desc = space['converters']
+        aggregation = space['aggregation']
 
         # Choose the right tokenizer
         if converter_desc == "wv" or converter_desc == "pos" or converter_desc == "tag":
@@ -176,7 +179,8 @@ if __name__ == "__main__":
                 rc_w_sparsity=w_sparsity,
                 converter_desc=converter_desc,
                 use_sparse_matrix=True if converter_desc == 'oh' else False,
-                w=w if args.keep_w else None
+                w=w if args.keep_w else None,
+                aggregation=aggregation
             )
 
             # Save w matrix
