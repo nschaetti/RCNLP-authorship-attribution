@@ -50,6 +50,53 @@ def converter_in(converters_desc, converter):
     return False
 # end converter_in
 
+
+# Do we have to change W for this property
+def change_w(params):
+    """
+    Do we have to change W for this parameter
+    :param params:
+    :return:
+    """
+    for param in params:
+        if param in [u"reservoir_size", u"w_sparsity"]:
+            return True
+        # end if
+    # end for
+    return False
+# end keep_w
+
+
+# Get changed params
+def get_changed_params(new_space, last_space):
+    """
+    Get changed param
+    :param new_space:
+    :param last_space:
+    :return:
+    """
+    # Empty last space
+    if len(last_space.keys()) == 0:
+        return new_space.keys()
+    # end if
+
+    # Changed params
+    changed_params = list()
+
+    # For each param in new space
+    for new_param in new_space.keys():
+        if new_param not in last_space.keys():
+            changed_params.append(new_param)
+        else:
+            if new_space[new_param] != last_space[new_param]:
+                changed_params.append(new_param)
+            # end if
+        # end if
+    # end for
+
+    return changed_params
+# end get_changed_params
+
 ####################################################
 # Main function
 ####################################################
@@ -100,8 +147,8 @@ if __name__ == "__main__":
                       extended=True, default="1")
 
     # Tokenizer and word vector parameters
-    args.add_argument(command="--tokenizer", name="tokenizer", type=str,
-                      help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
+    #args.add_argument(command="--tokenizer", name="tokenizer", type=str,
+    #                  help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
     args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters", default='en',
                       extended=False)
 
@@ -145,18 +192,6 @@ if __name__ == "__main__":
     # Print authors
     xp.write(u"Authors : {}".format(author_list), log_level=0)
 
-    # First params
-    rc_size = int(args.get_space()['reservoir_size'][0])
-    rc_w_sparsity = args.get_space()['w_sparsity'][0]
-
-    # Create W matrix
-    w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
-
-    # Save classifier
-    if args.keep_w:
-        xp.save_object(u"w", w)
-    # end if
-
     # W index
     w_index = 0
 
@@ -193,6 +228,16 @@ if __name__ == "__main__":
 
         # For each sample
         for n in range(args.n_samples):
+            # Changed parameter
+            changed_params = get_changed_params(space, last_space)
+
+            # Generate a new W if necessary
+            if change_w(changed_params) or not args.keep_w:
+                xp.write(u"\t\tGenerating new W matrix", log_level=2)
+                w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=reservoir_size, rc_w_sparsity=w_sparsity)
+                xp.save_object(u"w_{}".format(w_index), w, info=u"{}".format(space))
+            # end if
+
             # Set sample
             xp.set_sample_state(n)
 
@@ -206,17 +251,14 @@ if __name__ == "__main__":
                 rc_input_scaling=input_scaling,
                 rc_input_sparsity=input_sparsity,
                 rc_w_sparsity=w_sparsity,
-                converter_desc=converter_desc,
+                converters_desc=converter_desc,
                 use_sparse_matrix=True if converter_in(converter_desc, "oh") else False,
-                w=w if args.keep_w else None,
+                #w=w if args.keep_w else None,
+                w=w,
                 aggregation=aggregation,
-                state_gram=state_gram
+                state_gram=state_gram,
+                pca_path=args.pca_path
             )
-
-            # Save w matrix
-            if not args.keep_w:
-                xp.save_object(u"w_{}".format(w_index), classifier.get_w(), info=u"{}".format(space))
-            # end if
 
             # 10 fold cross validation
             cross_validation = CrossValidation(authors)
@@ -263,15 +305,15 @@ if __name__ == "__main__":
             # Add
             average_sample = np.append(average_sample, [np.average(average_k_fold)])
 
+            # Last space
+            last_space = space
+
             # Delete classifier
             del classifier
         # end for
 
         # W index
         w_index += 1
-
-        # Last space
-        last_space = space
     # end for
 
     # Save experiment results
