@@ -24,7 +24,6 @@
 
 import nsNLP
 import numpy as np
-from tools.ResultManager import ResultManager
 from tools.functions import create_tokenizer
 from corpus.CrossValidation import CrossValidation
 from corpus.Corpus import Corpus
