@@ -206,7 +206,7 @@ if __name__ == "__main__":
                 rc_input_scaling=input_scaling,
                 rc_input_sparsity=input_sparsity,
                 rc_w_sparsity=w_sparsity,
-                converter_desc=converter_desc,
+                converters_desc=converter_desc,
                 use_sparse_matrix=True if converter_in(converter_desc, "oh") else False,
                 w=w if args.keep_w else None,
                 aggregation=aggregation,
