@@ -25,7 +25,6 @@
 import nsNLP
 import numpy as np
 from tools.functions import create_tokenizer
-from corpus.CrossValidation import CrossValidation
 from corpus.Corpus import Corpus
 
 ####################################################
@@ -218,7 +217,7 @@ if __name__ == "__main__":
             # end if
 
             # 10 fold cross validation
-            cross_validation = CrossValidation(authors)
+            cross_validation = nsNLP.validation.CrossValidation(authors)
 
             # Average
             average_k_fold = np.array([])
