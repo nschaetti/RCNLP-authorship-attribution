@@ -116,7 +116,7 @@ if __name__ == "__main__":
         smoothing_param = float(space['smoothing_param'])
 
         # Choose the right tokenizer
-        tokenizer = create_tokenizer(args.tokenizer, "")
+        tokenizer = create_tokenizer(args.tokenizer)
 
         # Set experience state
         xp.set_state(space)
