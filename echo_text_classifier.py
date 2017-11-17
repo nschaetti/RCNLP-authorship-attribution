@@ -26,6 +26,7 @@ import nsNLP
 import numpy as np
 from tools.functions import create_tokenizer
 from corpus.Corpus import Corpus
+from corpus.CrossValidation import CrossValidation
 
 ####################################################
 # Functions
@@ -217,7 +218,7 @@ if __name__ == "__main__":
             # end if
 
             # 10 fold cross validation
-            cross_validation = nsNLP.validation.CrossValidation(authors)
+            cross_validation = CrossValidation(authors)
 
             # Average
             average_k_fold = np.array([])
@@ -240,6 +241,7 @@ if __name__ == "__main__":
                 successes = 0.0
 
                 # Test the classifier
+
                 for text in test_set:
                     # Predict
                     prediction, probs = classifier.predict(tokenizer(text.x()))
