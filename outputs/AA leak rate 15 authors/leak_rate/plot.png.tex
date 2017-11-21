@@ -1,0 +1,60 @@
+
+\documentclass{article}
+\usepackage{makeidx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{subfig}
+\usepackage{array}
+\usepackage{times}
+\usepackage{caption}
+\usepackage{tabularx}
+
+\begin{document}
+
+\title{leak-rate}
+
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        title={leak-rate},
+        xlabel={Results},
+        ylabel={},
+        ymajorgrids,
+        xmajorgrids,
+        major grid style={dashed},
+        mark size=1.25,
+        legend style={
+            at={(0.5,-0.32)},
+            anchor=north,
+            legend columns=2
+            }]
+
+            \addplot+[mark=+,error bars/.cd, y dir=both,y explicit]
+            coordinates
+            {
+                (0.01, 0.8586) +- (0.R)
+(0.05, 0.8016) +- (0.e)
+(0.1, 0.762533333333) +- (0.s)
+(0.2, 0.724533333333) +- (0.u)
+(0.3, 0.7022) +- (0.l)
+(0.4, 0.685733333333) +- (0.t)
+(0.5, 0.671466666667) +- (0.s)
+(0.6, 0.658866666667) +- (0. )
+(0.7, 0.645133333333) +- (0.v)
+(0.8, 0.630066666667) +- (0.s)
+(0.9, 0.6106) +- (0. )
+(1.0, 0.592866666667) +- (0.l)
+
+            };
+            \addlegendentry{}
+
+    \end{axis}
+\end{tikzpicture}
+
+\end{document}

@@ -1,0 +1,24 @@
+Best perf with 0.862666666667 +- 0.0283156807755 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.01, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 7, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.812666666667 +- 0.0227937613297 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.050000000000000003, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 5, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.771333333333 +- 0.0225191276721 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.10000000000000001, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 0, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.732 +- 0.0236267268622 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.20000000000000001, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 3, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.710666666667 +- 0.0215406592285 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.30000000000000004, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 2, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.701333333333 +- 0.0203960780544 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.40000000000000002, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 9, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.685333333333 +- 0.030521395046 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.5, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 0, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.669333333333 +- 0.0231324687639 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.59999999999999998, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 0, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.654666666667 +- 0.0178387842137 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.70000000000000007, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 3, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.645333333333 +- 0.0210396451174 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.80000000000000004, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 7, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.618666666667 +- 0.017587874611 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 0.90000000000000002, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 3, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
+Best perf with 0.605333333333 +- 0.0247296493213 : {'w_sparsity': 0.050000000000000003, 'input_scaling': 0.5, 'state_gram': 1.0, 'leak_rate': 1.0, 'input_sparsity': 0.050000000000000003, 'aggregation': u"[[u'average']]", 'reservoir_size': 500.0, 'samples': 5, 'converters': u"[[u'wv']]", 'spectral_radius': 1.0}
+
