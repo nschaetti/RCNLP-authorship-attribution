@@ -97,6 +97,8 @@ if __name__ == "__main__":
                       default="average")
     args.add_argument(command="--state-gram", name="state_gram", type=str, help="State-gram value",
                       extended=True, default="1")
+    args.add_argument(command="--voc-size", name="voc_size", type=int, help="Voc. size",
+                      default=10000, extended=False)
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
@@ -209,7 +211,8 @@ if __name__ == "__main__":
                 use_sparse_matrix=True if converter_in(converter_desc, "oh") else False,
                 w=w if args.keep_w else None,
                 aggregation=aggregation,
-                state_gram=state_gram
+                state_gram=state_gram,
+                voc_size=args.voc_size
             )
 
             # Save w matrix
