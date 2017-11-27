@@ -98,7 +98,7 @@ if __name__ == "__main__":
     args.add_argument(command="--state-gram", name="state_gram", type=str, help="State-gram value",
                       extended=True, default="1")
     args.add_argument(command="--voc-size", name="voc_size", type=int, help="Voc. size",
-                      default=10000, extended=False)
+                      default=30000, extended=False)
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
