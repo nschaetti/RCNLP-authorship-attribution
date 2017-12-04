@@ -1,0 +1,1 @@
+{'w_sparsity': 0.050000000000000003, 'leak_rate': 0.01, 'state_gram': 1.0, 'input_scaling': 0.5, 'input_sparsity': 0.050000000000000003, 'aggregation': [[u'average']], 'reservoir_size': 1000.0, 'converters': [[u'pos']], 'spectral_radius': 1.0}
