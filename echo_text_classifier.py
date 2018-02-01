@@ -103,7 +103,10 @@ if __name__ == "__main__":
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
                       help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
-    args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters", default='en',
+
+    # Tokenizer and word vector parameters
+    args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
+                      default='en_core_web_lg',
                       extended=False)
 
     # Experiment output parameters
@@ -151,7 +154,7 @@ if __name__ == "__main__":
     rc_w_sparsity = args.get_space()['w_sparsity'][0]
 
     # Create W matrix
-    w = nsNLP.esn_models.ESNTextClassifier.w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
+    w = nsNLP.esn_models.ESNTextClassifier.generate_w(rc_size=rc_size, rc_w_sparsity=rc_w_sparsity)
 
     # Save classifier
     if args.keep_w:
@@ -181,7 +184,7 @@ if __name__ == "__main__":
         if converter_in(converter_desc, "wv") or \
                 converter_in(converter_desc, "pos") or \
                 converter_in(converter_desc, "tag"):
-            tokenizer = create_tokenizer("spacy_wv")
+            tokenizer = create_tokenizer("spacy_wv", lang=args.lang)
         else:
             tokenizer = create_tokenizer("nltk")
         # end if
