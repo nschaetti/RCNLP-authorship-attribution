@@ -14,7 +14,6 @@ def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
     :param tokenizer_type: Tokenizer
     :return:
     """
-    print(lang)
     # Tokenizer
     if tokenizer_type == "nltk":
         tokenizer = nsNLP.tokenization.NLTKTokenizer()
