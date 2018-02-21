@@ -19,7 +19,7 @@ class Author(object):
     """
 
     # Constructor
-    def __init__(self, dataset_path, name):
+    def __init__(self, dataset_path, name, dataset_size=100, dataset_start=0):
         """
         Constructor
         """
@@ -27,6 +27,8 @@ class Author(object):
         self._dataset_path = dataset_path
         self._name = name
         self._texts = list()
+        self._dataset_size = dataset_size
+        self._dataset_start = dataset_start
 
         # Load
         self._load()
@@ -99,8 +101,10 @@ class Author(object):
         author_texts = json.load(open(os.path.join(self._dataset_path, "authors.json"), 'r'))[self._name]
 
         # For each texts
-        for author_text in author_texts:
-            self._texts.append(Text(text_path=os.path.join(self._dataset_path, author_text), author=self))
+        for index, author_text in enumerate(author_texts):
+            if index >= self._dataset_start and index < self._dataset_start + self._dataset_size:
+                self._texts.append(Text(text_path=os.path.join(self._dataset_path, author_text) + u".txt", author=self))
+            # end if
         # end for
     # end _load
 

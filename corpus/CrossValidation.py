@@ -25,10 +25,10 @@ class CrossValidation(object):
         """
         # Properties
         self._authors = authors
-        self._k = k
         self._pos = 0
         self._n_texts = len(authors[0].get_texts())
-        self._fold_size = int(math.floor(float(self._n_texts) / float(k)))
+        self._k = k if k < self._n_texts else self._n_texts
+        self._fold_size = int(math.floor(float(self._n_texts) / float(self._k)))
     # end __init__
 
     #################################################

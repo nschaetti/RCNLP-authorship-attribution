@@ -19,15 +19,18 @@ class Corpus(object):
     """
 
     # Constructor
-    def __init__(self, dataset_path):
+    def __init__(self, dataset_path, authors=None, n_authors=50, dataset_size=100, dataset_start=0):
         """
         Constructor
         :param dataset_path: Path to dataset
         """
         # Properties
         self._dataset_path = dataset_path
-        self._authors = list()
+        self.authors = authors
+        self.n_authors = n_authors if authors is None else len(authors)
         self._texts = list()
+        self.dataset_size = dataset_size
+        self.dataset_start = dataset_start
 
         # Load dataset
         self._load()
@@ -43,7 +46,7 @@ class Corpus(object):
         Get list of authors
         :return:
         """
-        return self._authors
+        return self.authors
     # end authors
 
     # Get author
@@ -53,7 +56,7 @@ class Corpus(object):
         :param author_name:
         :return:
         """
-        for author in self._authors:
+        for author in self.authors:
             if author.get_name() == author_name:
                 return author
             # end if
@@ -68,7 +71,7 @@ class Corpus(object):
         :return:
         """
         result = list()
-        for author in self._authors:
+        for author in self.authors:
             result.append(author.get_name())
         # end for
         return result
@@ -80,7 +83,7 @@ class Corpus(object):
         Get the number of authors
         :return:
         """
-        return len(self._authors)
+        return len(self.authors)
     # end get_n_authors
 
     # Get the number of texts
@@ -143,18 +146,36 @@ class Corpus(object):
         Load
         :return
         """
+        # Authors info
         authors_infos = json.load(open(os.path.join(self._dataset_path, "authors.json"), 'r'))
-        for author_name in authors_infos.keys():
-            # New author
-            author = Author(name=author_name, dataset_path=self._dataset_path)
 
-            # Add texts
-            for text in author.get_texts():
-                self._texts.append(text)
-            # end for
+        # Author count
+        author_count = 0
 
-            # Add
-            self._authors.append(author)
+        # Given authors
+        if self.authors is not None:
+            given_authors = list(self.authors)
+        else:
+            given_authors = None
+        # end if
+        self.authors = list()
+
+        for index, author_name in enumerate(authors_infos.keys()):
+            # If in the set
+            if author_count < self.n_authors and (given_authors is None or author_name in given_authors):
+                # New author
+                author = Author(name=author_name, dataset_path=self._dataset_path, dataset_size=self.dataset_size,
+                                dataset_start=self.dataset_start)
+
+                # Add texts
+                for text in author.get_texts():
+                    self._texts.append(text)
+                # end for
+
+                # Add
+                self.authors.append(author)
+                author_count += 1
+            # end if
         # end for
     # end _load
 
