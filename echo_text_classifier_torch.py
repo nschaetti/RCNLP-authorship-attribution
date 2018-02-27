@@ -105,6 +105,10 @@ args.add_argument(command="--state-gram", name="state_gram", type=str, help="Sta
                   extended=True, default="1")
 args.add_argument(command="--voc-size", name="voc_size", type=int, help="Voc. size",
                   default=30000, extended=False)
+args.add_argument(command="--feedbacks", name="feedbacks", action='store_true', help="Use feedbacks?",
+                  default=False, extended=False)
+args.add_argument(command="--feedbacks-sparsity", name="feedbacks_sparsity", type=str, help="Feedbacks sparsity", extended=True,
+                  default="0.05")
 
 # Tokenizer and word vector parameters
 args.add_argument(command="--tokenizer", name="tokenizer", type=str,
@@ -188,6 +192,7 @@ for space in param_space:
     transformer = space['transformer'][0][0]
     aggregation = space['aggregation'][0][0]
     state_gram = space['state_gram']
+    feedbacks_sparsity = space['feedbacks_sparsity']
 
     # Choose the right transformer
     if "wv" in transformer:
@@ -227,7 +232,9 @@ for space in param_space:
             w_sparsity=w_sparsity,
             w=w if args.keep_w else None,
             learning_algo='inv',
-            leaky_rate=leak_rate
+            leaky_rate=leak_rate,
+            feedbacks=args.feedbacks,
+            wfdb_sparsity=feedbacks_sparsity
         )
         if use_cuda:
             esn.cuda()
@@ -258,14 +265,16 @@ for space in param_space:
                 # To variable
                 inputs, time_labels = Variable(inputs), Variable(time_labels)
                 if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
-                # plt.plot(time_labels[0].data.numpy())
-                # plt.show()
+
                 # Accumulate xTx and xTy
                 esn(inputs, time_labels)
             # end for
 
             # Finalize training
             esn.finalize()
+
+            # Set test mode
+            reutersloader.dataset.set_train(False)
 
             # Counters
             successes = 0.0
@@ -285,13 +294,18 @@ for space in param_space:
 
                 # Normalized
                 y_predicted -= torch.min(y_predicted)
-                y_predicted /= torch.max(y_predicted)
+                y_predicted /= torch.max(y_predicted) - torch.min(y_predicted)
 
-                # plt.plot(y_predicted.data[0, :, 0].numpy(), c='r')
-                # plt.plot(y_predicted.data[0, :, 1].numpy(), c='b')
-                # plt.plot(y_predicted.data[0].numpy())
-                # plt.show()
-                # exit()
+                # Sum to one
+                sums = torch.sum(y_predicted, dim=2)
+                for t in range(y_predicted.size(1)):
+                    y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
+                # end for
+
+                """plt.plot(y_predicted.data[0, :, 0].numpy(), c='b')
+                plt.plot(y_predicted.data[0, :, 1].numpy(), c='r')
+                plt.plot(y_predicted.data[0, :, 2].numpy(), c='g')
+                plt.show()"""
 
                 # Normalized
                 y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)

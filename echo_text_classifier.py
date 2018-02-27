@@ -215,7 +215,8 @@ if __name__ == "__main__":
                 w=w if args.keep_w else None,
                 aggregation=aggregation,
                 state_gram=state_gram,
-                voc_size=args.voc_size
+                voc_size=args.voc_size,
+                pca_path=args.pca_path
             )
 
             # Save w matrix
