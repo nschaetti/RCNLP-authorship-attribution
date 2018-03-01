@@ -302,11 +302,6 @@ for space in param_space:
                     y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
                 # end for
 
-                """plt.plot(y_predicted.data[0, :, 0].numpy(), c='b')
-                plt.plot(y_predicted.data[0, :, 1].numpy(), c='r')
-                plt.plot(y_predicted.data[0, :, 2].numpy(), c='g')
-                plt.show()"""
-
                 # Normalized
                 y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
 
