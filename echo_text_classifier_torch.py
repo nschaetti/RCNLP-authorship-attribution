@@ -192,7 +192,7 @@ for space in param_space:
     aggregation = space['aggregation'][0][0]
     state_gram = space['state_gram']
     feedbacks_sparsity = space['feedbacks_sparsity']
-    lang = space['lang']
+    lang = space['lang'][0][0]
 
     # Choose the right transformer
     if "wv" in transformer:

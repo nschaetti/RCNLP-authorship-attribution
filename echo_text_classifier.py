@@ -106,8 +106,7 @@ if __name__ == "__main__":
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
-                      default='en_core_web_lg',
-                      extended=False)
+                      default='en_core_web_lg', extended=True)
 
     # Experiment output parameters
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -179,12 +178,13 @@ if __name__ == "__main__":
         converter_desc = space['converters']
         aggregation = space['aggregation'][0][0]
         state_gram = space['state_gram']
+        lang = space['lang'][0][0]
 
         # Choose the right tokenizer
         if converter_in(converter_desc, "wv") or \
                 converter_in(converter_desc, "pos") or \
                 converter_in(converter_desc, "tag"):
-            tokenizer = create_tokenizer("spacy_wv", lang=args.lang)
+            tokenizer = create_tokenizer("spacy_wv", lang=lang)
         else:
             tokenizer = create_tokenizer("nltk")
         # end if
