@@ -116,8 +116,7 @@ args.add_argument(command="--tokenizer", name="tokenizer", type=str,
 
 # Tokenizer and word vector parameters
 args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
-                  default='en_core_web_lg',
-                  extended=False)
+                  default='en_core_web_lg', extended=True)
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -193,14 +192,15 @@ for space in param_space:
     aggregation = space['aggregation'][0][0]
     state_gram = space['state_gram']
     feedbacks_sparsity = space['feedbacks_sparsity']
+    lang = space['lang']
 
     # Choose the right transformer
     if "wv" in transformer:
-        reutersloader.dataset.transform = text.GloveVector()
+        reutersloader.dataset.transform = text.GloveVector(model=lang)
     elif "pos" in transformer:
-        reutersloader.dataset.transform = text.PartOfSpeech()
+        reutersloader.dataset.transform = text.PartOfSpeech(model=lang)
     elif "tag" in transformer:
-        reutersloader.dataset.transform = text.Tag()
+        reutersloader.dataset.transform = text.Tag(model=lang)
     elif "character" in transformer:
         reutersloader.dataset.transform = text.Character()
     elif "fw" in transformer:
