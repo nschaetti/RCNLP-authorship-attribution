@@ -24,17 +24,13 @@
 
 import nsNLP
 import numpy as np
-from tools.functions import create_tokenizer
-from corpus.Corpus import Corpus
-from corpus.CrossValidation import CrossValidation
 import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
 import echotorch.nn as etnn
 import echotorch.utils
-from datetime import datetime
-import matplotlib.pyplot as plt
+import os
 
 ####################################################
 # Functions
@@ -113,10 +109,12 @@ args.add_argument(command="--feedbacks-sparsity", name="feedbacks_sparsity", typ
 # Tokenizer and word vector parameters
 args.add_argument(command="--tokenizer", name="tokenizer", type=str,
                   help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
-
-# Tokenizer and word vector parameters
 args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
                   default='en_core_web_lg', extended=True)
+args.add_argument(command="--embedding", name="embedding", type=str, help="Which word embedding to use? (glove, word2vec, skipgram)",
+                  default='glove', extended=True)
+args.add_argument(command="--embedding-path", name="embedding_path", type=str, help="Embedding directory",
+                  default='~/Projets/TURING/Dataset/', extended=False)
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -193,10 +191,17 @@ for space in param_space:
     state_gram = space['state_gram']
     feedbacks_sparsity = space['feedbacks_sparsity']
     lang = space['lang'][0][0]
+    embedding = space['embedding'][0][0]
 
     # Choose the right transformer
     if "wv" in transformer:
-        reutersloader.dataset.transform = text.GloveVector(model=lang)
+        if embedding == 'glove':
+            reutersloader.dataset.transform = text.GloveVector(model=lang)
+        else:
+            reutersloader.dataset.transform = text.GensimModel(
+                model_path=os.path.join(args.embedding_path, embedding, "embedding.en.bin")
+            )
+        # end if
     elif "pos" in transformer:
         reutersloader.dataset.transform = text.PartOfSpeech(model=lang)
     elif "tag" in transformer:
@@ -238,11 +243,6 @@ for space in param_space:
         )
         if use_cuda:
             esn.cuda()
-        # end if
-
-        # Save w matrix
-        # if not args.keep_w:
-        #    xp.save_object(u"w_{}".format(w_index), esn.w, info=u"{}".format(space))
         # end if
 
         # Average
