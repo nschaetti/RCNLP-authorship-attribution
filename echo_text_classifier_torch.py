@@ -248,6 +248,9 @@ for space in param_space:
         # Average
         average_k_fold = np.array([])
 
+        # OOV
+        oov = np.array([])
+
         # For each batch
         for k in range(10):
             # Set fold and training mode
@@ -268,6 +271,9 @@ for space in param_space:
 
                 # Accumulate xTx and xTy
                 esn(inputs, time_labels)
+
+                # OOV
+                oov = np.append(oov, [reutersloader.dataset.transform.oov])
             # end for
 
             # Finalize training
@@ -310,8 +316,14 @@ for space in param_space:
                     successes += 1.0
                 # end if
 
+                # OOV
+                oov = np.append(oov, [reutersloader.dataset.transform.oov])
+
                 count += 1.0
             # end for
+
+            # OOV
+            print(u"OOV : {} %".format(np.average(oov)))
 
             # Print success rate
             xp.add_result(successes / count)
