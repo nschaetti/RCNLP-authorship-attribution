@@ -114,7 +114,7 @@ args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer langu
 args.add_argument(command="--embedding", name="embedding", type=str, help="Which word embedding to use? (glove, word2vec, skipgram)",
                   default='glove', extended=True)
 args.add_argument(command="--embedding-path", name="embedding_path", type=str, help="Embedding directory",
-                  default='~/Projets/TURING/Dataset/', extended=False)
+                  default='~/Projets/TURING/Datasets/', extended=False)
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -197,9 +197,13 @@ for space in param_space:
     if "wv" in transformer:
         if embedding == 'glove':
             reutersloader.dataset.transform = text.GloveVector(model=lang)
-        else:
+        elif embedding == 'word2vec':
             reutersloader.dataset.transform = text.GensimModel(
                 model_path=os.path.join(args.embedding_path, embedding, "embedding.en.bin")
+            )
+        elif embedding == 'fasttext':
+            reutersloader.dataset.transform = text.GensimModel(
+                model_path=os.path.join(args.embedding_path, embedding, "embedding.en.vec")
             )
         # end if
     elif "pos" in transformer:
