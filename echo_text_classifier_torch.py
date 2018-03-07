@@ -110,7 +110,7 @@ args.add_argument(command="--feedbacks-sparsity", name="feedbacks_sparsity", typ
 args.add_argument(command="--tokenizer", name="tokenizer", type=str,
                   help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
 args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
-                  default='en_core_web_lg', extended=True)
+                  default='en_vectors_web_lg', extended=True)
 args.add_argument(command="--embedding", name="embedding", type=str, help="Which word embedding to use? (glove, word2vec, skipgram)",
                   default='glove', extended=True)
 args.add_argument(command="--embedding-path", name="embedding_path", type=str, help="Embedding directory",
