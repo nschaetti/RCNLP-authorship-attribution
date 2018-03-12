@@ -47,10 +47,10 @@ def token_to_ix_voc_size(text_data):
     """
     token_to_ix = {}
     index = 0
-    for i in range(len(text_data)):
-        character = text_data[i]
-        if character not in token_to_ix:
-            token_to_ix[character] = index
+    for i in np.arange(1, len(text_data)):
+        cgram = text_data[i-1:i+1]
+        if cgram not in token_to_ix:
+            token_to_ix[cgram] = index
             index += 1
         # end if
     # end for
@@ -87,13 +87,13 @@ embedding_layer = nn.Embedding(voc_size, args.dim)
 # Grams
 grams = list()
 
-# Build tuple with (preceding chars, target char)
-for i in np.arange(args.context_size, len(text)):
+# Build tuple with (preceding grams, target gram)
+for i in np.arange(args.context_size * 2, len(text)-1):
     context = list()
-    for j in np.arange(i-args.context_size, i):
-        context.append(text[j])
+    for j in np.arange(i-args.context_size*2, i, 2):
+        context.append(text[j:j+2])
     # end for
-    grams.append((context, text[i]))
+    grams.append((context, text[i,i+2]))
 # end for
 
 # Losses
