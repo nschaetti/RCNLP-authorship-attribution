@@ -144,3 +144,5 @@ print(model.embeddings(autograd.Variable(torch.LongTensor([token_to_ix['a']]))))
 print(token_to_ix['b'])
 print(model.embeddings(autograd.Variable(torch.LongTensor([token_to_ix['b']]))))
 
+# Save
+torch.save(model.embeddings, open(args.output, 'wb'))
