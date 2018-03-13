@@ -52,6 +52,7 @@ def token_to_ix_voc_size(text_data):
         if character not in token_to_ix:
             token_to_ix[character] = index
             index += 1
+            print(index)
         # end if
     # end for
     return token_to_ix, index
@@ -60,6 +61,7 @@ def token_to_ix_voc_size(text_data):
 ####################################################
 # Main function
 ####################################################
+
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Character embedding extraction")
@@ -80,6 +82,7 @@ text = codecs.open(args.dataset, 'rb', encoding='utf-8').read()
 
 # Token to ix and voc size
 token_to_ix, voc_size = token_to_ix_voc_size(text)
+print(voc_size)
 
 # Embedding layer
 embedding_layer = nn.Embedding(voc_size, args.dim)

@@ -206,6 +206,7 @@ for space in param_space:
                 model_path=os.path.join(args.embedding_path, embedding, "embedding.en.vec")
             )
         # end if
+        print(type(reutersloader.dataset.transform))
     elif "pos" in transformer:
         reutersloader.dataset.transform = text.PartOfSpeech(model=lang)
     elif "tag" in transformer:
