@@ -58,11 +58,13 @@ args = parser.parse_args()
 subdirectories = list()
 subdir_files = dict()
 for subdir_name in os.listdir(args.dataset):
-    subdirectories.append(subdir_name)
-    subdir_files[subdir_name] = list()
-    for file_name in os.listdir(os.path.join(args.dataset, subdir_name)):
-        subdir_files[subdir_name].append(file_name)
-    # end for
+    if os.path.isdir(os.path.join(args.dataset, subdir_name)):
+        subdirectories.append(subdir_name)
+        subdir_files[subdir_name] = list()
+        for file_name in os.listdir(os.path.join(args.dataset, subdir_name)):
+            subdir_files[subdir_name].append(file_name)
+        # end for
+    # end if
 # end for
 
 print(subdirectories)
