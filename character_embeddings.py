@@ -50,7 +50,7 @@ def token_to_ix_voc_size(dataset_path):
     index = 0
     # For each file
     for file_name in os.listdir(dataset_path):
-        text_data = codecs.open(os.path.join(dataset_path, file_name), 'r', encoding='utf-8')
+        text_data = codecs.open(os.path.join(dataset_path, file_name), 'r', encoding='utf-8').read()
         for i in range(len(text_data)):
             character = text_data[i]
             if character not in token_to_ix:
