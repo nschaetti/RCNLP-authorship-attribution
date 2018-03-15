@@ -77,9 +77,7 @@ while n_created_files < args.n_files:
 
     # Take a random file
     n_data_file = len(subdir_files[random_subdir_name])
-    print(n_data_file)
-    n_rand = random.randint(0, n_data_file)
-    print(n_rand)
+    n_rand = random.randint(0, n_data_file-1)
     random_data_file = subdir_files[random_subdir_name][n_rand]
 
     # Read the file
