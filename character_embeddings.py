@@ -31,6 +31,7 @@ import torch.optim as optim
 import codecs
 import numpy as np
 from modules import CharacterLanguageModel
+import os
 
 
 ####################################################
@@ -39,7 +40,7 @@ from modules import CharacterLanguageModel
 
 
 # Compute token to ix and voc size
-def token_to_ix_voc_size(text_data):
+def token_to_ix_voc_size(dataset_path):
     """
     Compute token to ix and voc size
     :param text_data:
@@ -47,13 +48,17 @@ def token_to_ix_voc_size(text_data):
     """
     token_to_ix = {}
     index = 0
-    for i in range(len(text_data)):
-        character = text_data[i]
-        if character not in token_to_ix:
-            token_to_ix[character] = index
-            index += 1
-            print(index)
-        # end if
+    # For each file
+    for file_name in os.listdir(dataset_path):
+        text_data = codecs.open(os.path.join(dataset_path, file_name), 'r', encoding='utf-8')
+        for i in range(len(text_data)):
+            character = text_data[i]
+            if character not in token_to_ix:
+                token_to_ix[character] = index
+                index += 1
+                print(index)
+            # end if
+        # end for
     # end for
     return token_to_ix, index
 # end token_to_ix_voc_size
@@ -77,12 +82,11 @@ args = parser.parse_args()
 # Init random seed
 torch.manual_seed(1)
 
-# Load file
-text = codecs.open(args.dataset, 'rb', encoding='utf-8').read()
-
 # Token to ix and voc size
-token_to_ix, voc_size = token_to_ix_voc_size(text)
+token_to_ix, voc_size = token_to_ix_voc_size(args.dataset)
 print(voc_size)
+print(token_to_ix)
+exit()
 
 # Embedding layer
 embedding_layer = nn.Embedding(voc_size, args.dim)
