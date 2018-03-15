@@ -57,6 +57,21 @@ args = parser.parse_args()
 # Open output file
 output_file = codecs.open(args.output, 'ab', encoding='utf-8')
 
+# List of subdirectories
+subdirectories = list()
+subdir_files = dict()
+for subdir_name in os.listdir(args.dataset):
+    subdirectories.append(subdir_name)
+    subdir_files[subdir_name] = list()
+    for file_name in os.listdir(os.path.join(args.dataset, subdir_name)):
+        subdir_files[subdir_name].append(file_name)
+    # end for
+# end for
+
+print(subdirectories)
+print(subdir_files)
+exit()
+
 # List directory
 for file_name in os.listdir(args.dataset):
     # Read the file
