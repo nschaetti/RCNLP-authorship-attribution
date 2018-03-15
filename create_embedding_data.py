@@ -32,6 +32,8 @@ import codecs
 import numpy as np
 from modules import CharacterLanguageModel
 import os
+import random
+import string
 
 
 ####################################################
@@ -49,7 +51,7 @@ parser = argparse.ArgumentParser(description="Create embedding data")
 # Argument
 parser.add_argument("--dataset", type=str, help="Input directory")
 parser.add_argument("--uppercase", action='store_true', default=False, help="Input directory")
-parser.add_argument("--output", type=str, help="Embedding output file", default='char_embedding.p')
+parser.add_argument("--output", type=str, help="Embedding output directory", default='embedding_data')
 args = parser.parse_args()
 
 # Open output file
@@ -66,7 +68,20 @@ for file_name in os.listdir(args.dataset):
     # For each line
     for line in lines:
         if line != u"####################################################################################################":
-            output_file.write(line + u"\n")
+            # Random filename
+            random_filename = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
+
+            # Path
+            file_path = os.path.join(args.output, random_filename + ".txt")
+
+            # Open
+            f = codecs.open(file_path, 'wb', encoding='utf-8')
+
+            # Write
+            f.write(line)
+
+            # Close
+            f.close()
         # end if
     # end for
 # end for
