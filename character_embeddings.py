@@ -83,9 +83,6 @@ torch.manual_seed(1)
 
 # Token to ix and voc size
 token_to_ix, voc_size = token_to_ix_voc_size(args.dataset)
-print(voc_size)
-print(token_to_ix)
-exit()
 
 # Embedding layer
 embedding_layer = nn.Embedding(voc_size, args.dim)
