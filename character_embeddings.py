@@ -56,7 +56,6 @@ def token_to_ix_voc_size(dataset_path):
             if character not in token_to_ix:
                 token_to_ix[character] = index
                 index += 1
-                print(index)
             # end if
         # end for
     # end for
