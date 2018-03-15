@@ -52,9 +52,11 @@ parser = argparse.ArgumentParser(description="Create embedding data")
 parser.add_argument("--dataset", type=str, help="Input directory")
 parser.add_argument("--uppercase", action='store_true', default=False, help="Input directory")
 parser.add_argument("--output", type=str, help="Embedding output directory", default='embedding_data')
+parser.add_argument("--n-files", type=int, help="Number of Wikipedia articles to take", default=1000)
 args = parser.parse_args()
 
 # List of subdirectories
+n_subdir = 0
 subdirectories = list()
 subdir_files = dict()
 for subdir_name in os.listdir(args.dataset):
@@ -64,17 +66,24 @@ for subdir_name in os.listdir(args.dataset):
         for file_name in os.listdir(os.path.join(args.dataset, subdir_name)):
             subdir_files[subdir_name].append(file_name)
         # end for
+        n_subdir += 1
     # end if
 # end for
 
-print(subdirectories)
-print(subdir_files)
-exit()
-
 # List directory
-for file_name in os.listdir(args.dataset):
+n_created_files = 0
+while n_created_files < args.n_files:
+    # Take a random subdir
+    random_subdir_name = subdirectories[random.randint(0, n_subdir)]
+
+    # Take a random file
+    n_data_file = len(subdir_files[random_subdir_name])
+    random_data_file = subdir_files[random_subdir_name][random.randint(0, n_data_file)]
+
     # Read the file
-    text_data = codecs.open(os.path.join(args.dataset, file_name), 'rb', encoding='utf-8').read()
+    text_data = codecs.open(
+        os.path.join(args.dataset, os.path.join(args.dataset, random_subdir_name, random_data_file)), 'rb',
+        encoding='utf-8').read()
 
     # Split by lines
     lines = text_data.split(u"\n")
@@ -96,8 +105,9 @@ for file_name in os.listdir(args.dataset):
 
             # Close
             f.close()
+
+            # Add
+            n_created_files += 1
         # end if
     # end for
-# end for
-
-output_file.close()
+# end while
