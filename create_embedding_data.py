@@ -54,9 +54,6 @@ parser.add_argument("--uppercase", action='store_true', default=False, help="Inp
 parser.add_argument("--output", type=str, help="Embedding output directory", default='embedding_data')
 args = parser.parse_args()
 
-# Open output file
-output_file = codecs.open(args.output, 'ab', encoding='utf-8')
-
 # List of subdirectories
 subdirectories = list()
 subdir_files = dict()
