@@ -73,7 +73,7 @@ for subdir_name in os.listdir(args.dataset):
 n_created_files = 0
 while n_created_files < args.n_files:
     # Take a random subdir
-    random_subdir_name = subdirectories[random.randint(0, n_subdir)]
+    random_subdir_name = subdirectories[random.randint(0, n_subdir-1)]
 
     # Take a random file
     n_data_file = len(subdir_files[random_subdir_name])
