@@ -50,7 +50,6 @@ parser = argparse.ArgumentParser(description="Create embedding data")
 
 # Argument
 parser.add_argument("--dataset", type=str, help="Input directory")
-parser.add_argument("--uppercase", action='store_true', default=False, help="Input directory")
 parser.add_argument("--output", type=str, help="Embedding output directory", default='embedding_data')
 parser.add_argument("--n-files", type=int, help="Number of Wikipedia articles to take", default=1000)
 args = parser.parse_args()
