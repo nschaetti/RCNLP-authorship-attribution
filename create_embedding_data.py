@@ -105,6 +105,9 @@ while n_created_files < args.n_files:
             # Close
             f.close()
 
+            # Print
+            print(u"Created {}".format(os.path.join(file_path)))
+
             # Add
             n_created_files += 1
         # end if
