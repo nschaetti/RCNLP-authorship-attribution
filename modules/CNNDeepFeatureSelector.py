@@ -14,7 +14,7 @@ class CNNDeepFeatureSelector(nn.Module):
     """
 
     # Constructor
-    def __init__(self, n_authors=15, embedding_dim=300, out_channels=(20, 10), kernel_sizes=(5, 5), n_features=30):
+    def __init__(self, n_authors=15, embedding_dim=300, out_channels=(20, 10), kernel_sizes=(5, 5), max_pool_size=2, n_features=30):
         """
         Constructor
         :param n_authors:
@@ -30,7 +30,7 @@ class CNNDeepFeatureSelector(nn.Module):
         self.conv1 = nn.Conv1d(in_channels=1, out_channels=out_channels[0], kernel_size=kernel_sizes[0])
 
         # Max pooling layer
-        self.max_pool = nn.MaxPool1d(kernel_size=embedding_dim - out_channels[0] + 1, stride=0)
+        self.max_pool = nn.MaxPool1d(kernel_size=max_pool_size, stride=0)
 
         # Conv 2
         self.conv2 = nn.Conv1d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=kernel_sizes[1])
