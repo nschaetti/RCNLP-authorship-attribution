@@ -37,7 +37,7 @@ import os
 
 
 # Settings
-n_epoch = 30
+n_epoch = 100
 embedding_dim = 300
 n_authors = 15
 
