@@ -30,7 +30,7 @@ class CNN2DDeepFeatureSelector(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=out_channels[0], kernel_size=(n_gram, kernel_sizes[0]))
 
         # Max pooling layer
-        self.max_pool = nn.MaxPool2d(kernel_size=(max_pool_size, max_pool_size), stride=0)
+        self.max_pool = nn.MaxPool2d(kernel_size=(1, max_pool_size), stride=0)
 
         # Conv 2
         self.conv2 = nn.Conv2d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=(n_gram, kernel_sizes[1]))
