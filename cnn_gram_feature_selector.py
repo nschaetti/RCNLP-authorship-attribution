@@ -78,18 +78,15 @@ for epoch in range(n_epoch):
         sample_inputs, labels, time_labels = data
 
         # Create inputs
-        inputs = torch.FloatTensor(1, sample_inputs.size(0)-n_gram+1, n_gram, embedding_dim)
+        inputs = torch.FloatTensor(sample_inputs.size(0)-n_gram+1, n_gram, embedding_dim)
         for i in np.arange(n_gram, inputs.size(0)+1):
-            inputs[0, i-n_gram] = sample_inputs[i-n_gram:i]
+            inputs[i-n_gram] = sample_inputs[0, i-n_gram:i]
         # end for
-        print(inputs.size())
-        exit()
+
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
-
-        # Channel
-        inputs = inputs.view((-1, 1, embedding_dim))
-
+        print(inputs.size())
+        exit()
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
         # inputs, outputs = inputs.cuda(), outputs.cuda()
