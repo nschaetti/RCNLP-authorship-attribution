@@ -76,8 +76,12 @@ for epoch in range(n_epoch):
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
+        # Channel
+        inputs = inputs.squeeze(0).unsqueeze(1)
+        outputs = outputs.squeeze(0).unsqueeze(1)
+
         # To variable
-        inputs, outputs = Variable(inputs.squeeze(0)), Variable(outputs)
+        inputs, outputs = Variable(inputs), Variable(outputs)
         # inputs, outputs = inputs.cuda(), outputs.cuda()
 
         # Zero grad
