@@ -126,7 +126,7 @@ for epoch in range(n_epoch):
         # end for
 
         # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
