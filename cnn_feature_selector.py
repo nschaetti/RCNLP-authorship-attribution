@@ -51,7 +51,7 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 
 # Model
 # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-model = CNNDeepFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
+model = CNNDeepFeatureSelector(n_authors=n_authors)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
