@@ -35,7 +35,7 @@ class CNNDeepFeatureSelector(nn.Module):
         self.conv2 = nn.Conv1d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=kernel_sizes[1])
 
         # Linear layer 1
-        self.linear_size = out_channels[1] * kernel_sizes[1]
+        self.linear_size = out_channels[1] * 72
         self.linear = nn.Linear(out_channels[1] * kernel_sizes[1], n_features)
 
         # Linear layer 2
