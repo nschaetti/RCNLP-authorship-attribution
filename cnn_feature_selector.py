@@ -93,7 +93,7 @@ for epoch in range(n_epoch):
 
         # Loss
         loss = loss_function(log_probs, outputs)
-
+        print(loss.data[0])
         # Backward and step
         loss.backward()
         optimizer.step()
@@ -101,7 +101,6 @@ for epoch in range(n_epoch):
         # Add
         training_loss += loss.data[0]
     # end for
-    print(training_loss)
 
     # Set test mode
     reutersloader.dataset.set_train(False)
