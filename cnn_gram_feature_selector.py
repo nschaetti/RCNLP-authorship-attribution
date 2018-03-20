@@ -76,13 +76,13 @@ for epoch in range(n_epoch):
     for i, data in enumerate(reutersloader):
         # Inputs and labels
         sample_inputs, labels, time_labels = data
-
+        print(sample_inputs.size())
         # Create inputs
         inputs = torch.zeros(sample_inputs.size(1)-n_gram+1, n_gram, embedding_dim)
         for i in np.arange(n_gram, sample_inputs.size(0)+1):
             inputs[i-n_gram] = sample_inputs[0, i-n_gram:i]
         # end for
-        print(inputs.size())
+
         # Outputs
         outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
         print(inputs.size())
