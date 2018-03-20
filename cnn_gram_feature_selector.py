@@ -85,8 +85,7 @@ for epoch in range(n_epoch):
 
         # Outputs
         outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
-        print(inputs.size())
-        exit()
+
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
         # inputs, outputs = inputs.cuda(), outputs.cuda()
