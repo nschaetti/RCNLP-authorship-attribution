@@ -77,8 +77,8 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
         # Channel
-        inputs = inputs.squeeze(0).unsqueeze(1)
-        outputs = outputs.squeeze(0).unsqueeze(1)
+        inputs = inputs.squeeze(0).unsqueeze(1).unsqueeze(3)
+        outputs = outputs.squeeze(0).unsqueeze(1).unsqueeze(3)
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)

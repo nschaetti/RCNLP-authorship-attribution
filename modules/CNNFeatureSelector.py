@@ -58,6 +58,7 @@ class CNNFeatureSelector(nn.Module):
         :param x:
         :return:
         """
+        print(x.size())
         # Conv window
         out_win1 = F.relu(self.conv_w1(x))
         out_win2 = F.relu(self.conv_w2(x))
