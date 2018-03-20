@@ -33,11 +33,11 @@ import torch.nn as nn
 
 
 # Settings
-n_epoch = 30
+n_epoch = 500
 embedding_dim = 300
 n_authors = 15
 n_gram = 2
-use_cuda = False
+use_cuda = True
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -55,10 +55,11 @@ if use_cuda:
 # end if
 
 # Optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0.9)
 
 # Loss function
 loss_function = nn.NLLLoss()
+# loss_function = nn.CrossEntropyLoss()
 
 # Set fold and training mode
 reutersloader.dataset.set_fold(0)
@@ -139,7 +140,7 @@ for epoch in range(n_epoch):
         # Forward
         model_outputs = model(inputs)
         loss = loss_function(model_outputs, outputs)
-        # print(model_outputs)
+
         # Take the max as predicted
         _, predicted = torch.max(model_outputs.data, 1)
 
