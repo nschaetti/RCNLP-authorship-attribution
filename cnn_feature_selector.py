@@ -39,7 +39,7 @@ import os
 # Settings
 n_epoch = 30
 embedding_dim = 300
-n_authors = 12
+n_authors = 15
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
