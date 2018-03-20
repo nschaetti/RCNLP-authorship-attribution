@@ -76,14 +76,14 @@ for epoch in range(n_epoch):
     for i, data in enumerate(reutersloader):
         # Inputs and labels
         sample_inputs, labels, time_labels = data
-        print(sample_inputs.size())
-        exit()
-        # Create inputs
-        inputs = torch.FloatTensor(sample_inputs.size(0)-n_gram+1, n_gram, embedding_dim)
-        for i in np.arange(n_gram, inputs.size(0)+1):
-            inputs[i-n_gram] = sample_inputs[i-n_gram:i]
-        # end for
 
+        # Create inputs
+        inputs = torch.FloatTensor(1, sample_inputs.size(0)-n_gram+1, n_gram, embedding_dim)
+        for i in np.arange(n_gram, inputs.size(0)+1):
+            inputs[0, i-n_gram] = sample_inputs[i-n_gram:i]
+        # end for
+        print(inputs.size())
+        exit()
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
