@@ -90,8 +90,7 @@ for epoch in range(n_epoch):
 
         # Compute output
         log_probs = model(inputs)
-        print(log_probs)
-        exit()
+
         # Loss
         loss = loss_function(log_probs, outputs)
 
@@ -102,6 +101,7 @@ for epoch in range(n_epoch):
         # Add
         training_loss += loss.data[0]
     # end for
+    print(training_loss)
 
     # Set test mode
     reutersloader.dataset.set_train(False)
