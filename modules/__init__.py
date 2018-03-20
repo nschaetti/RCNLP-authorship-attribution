@@ -3,3 +3,4 @@
 #
 
 from CharacterLanguageModel import CharacterLanguageModel
+from CNNFeatureSelector import CNNFeatureSelector
