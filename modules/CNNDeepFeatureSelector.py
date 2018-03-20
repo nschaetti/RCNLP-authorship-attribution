@@ -69,7 +69,7 @@ class CNNDeepFeatureSelector(nn.Module):
 
         # Linear 2
         out = F.relu(self.linear2(out))
-        print(out.size())
+
         # Log softmax
         log_prob = F.log_softmax(out, dim=1)
 
