@@ -59,26 +59,22 @@ class CNNFeatureSelector(nn.Module):
         out_win1 = F.relu(self.conv_w1(x))
         out_win2 = F.relu(self.conv_w2(x))
         out_win3 = F.relu(self.conv_w3(x))
-        print(out_win1.size())
-        print(out_win2.size())
-        print(out_win3.size())
+
         # Max pooling
         max_win1 = self.max_pool_w1(out_win1)
-        print(out_win1.size())
         max_win2 = self.max_pool_w2(out_win2)
-        print(out_win2.size())
         max_win3 = self.max_pool_w3(out_win3)
-        print(out_win3.size())
-        exit()
+
         # Concatenate
         out = torch.cat((max_win1, max_win2, max_win3), dim=1)
-
+        print(out.size())
         # Flatten
         out = out.view(-1, self.linear_size)
-
+        print(out.size())
         # Linear
         out = self.linear(out)
-
+        print(out.size())
+        exit()
         # Log Softmax
         return F.log_softmax(out, dim=1)
     # end forward
