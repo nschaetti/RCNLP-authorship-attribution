@@ -80,6 +80,7 @@ class CNNFeatureSelector(nn.Module):
         # Log softmax
         log_prob = F.log_softmax(out, dim=1)
         print(log_prob.size())
+        print(log_prob)
         exit()
         # Log Softmax
         return log_prob
