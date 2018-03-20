@@ -94,7 +94,8 @@ for epoch in range(n_epoch):
 
         # Loss
         loss = loss_function(log_probs, outputs)
-
+        print(loss.size())
+        exit()
         # Backward and step
         loss.backward()
         optimizer.step()
