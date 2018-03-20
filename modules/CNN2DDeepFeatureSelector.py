@@ -56,7 +56,7 @@ class CNN2DDeepFeatureSelector(nn.Module):
         print(out_conv1.size())
         # Max pooling
         max_pooled = self.max_pool(out_conv1)
-
+        print(max_pooled.size())
         # Conv 2
         out_conv2 = F.relu(self.conv2(max_pooled))
 
