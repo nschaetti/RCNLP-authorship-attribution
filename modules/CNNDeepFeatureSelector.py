@@ -54,13 +54,13 @@ class CNNDeepFeatureSelector(nn.Module):
         out_conv1 = F.relu(self.conv1(x))
 
         # Max pooling
-        max_pooled = self.max_pool_w1(out_conv1)
+        max_pooled = self.max_pool(out_conv1)
 
         # Conv 2
         out_conv2 = F.relu(self.conv2(max_pooled))
 
         # Max pooling
-        max_pooled = self.max_pool_w1(out_conv2)
+        max_pooled = self.max_pool(out_conv2)
 
         # Flatten
         out = max_pooled.view(-1, self.linear_size)
