@@ -60,7 +60,7 @@ class CNNDeepFeatureSelector(nn.Module):
 
         # Max pooling
         max_pooled = self.max_pool(out_conv2)
-        print(max_pooled.size())
+
         # Flatten
         out = max_pooled.view(-1, self.linear_size)
 
@@ -69,7 +69,7 @@ class CNNDeepFeatureSelector(nn.Module):
 
         # Linear 2
         out = F.relu(self.linear2(out))
-
+        print(out.size())
         # Log softmax
         log_prob = F.log_softmax(out, dim=1)
 
