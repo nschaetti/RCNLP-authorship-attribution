@@ -28,7 +28,7 @@ import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
-from modules import CNNFeatureSelector
+from modules import CNNDeepFeatureSelector, CNNFeatureSelector
 from torch import optim
 import torch.nn as nn
 import echotorch.nn as etnn
@@ -50,7 +50,8 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
                                             batch_size=1, shuffle=False)
 
 # Model
-model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
+# model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
+model = CNNDeepFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
