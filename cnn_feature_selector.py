@@ -38,6 +38,7 @@ import os
 
 # Settings
 n_epoch = 30
+embedding_dim = 300
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -48,7 +49,7 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
                                             batch_size=1, shuffle=False)
 
 # Model
-model = CNNFeatureSelector()
+model = CNNFeatureSelector(embedding_dim=embedding_dim)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
@@ -77,8 +78,8 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
         # Channel
-        inputs = inputs.squeeze(0).unsqueeze(1).unsqueeze(3)
-        outputs = outputs.squeeze(0).unsqueeze(1).unsqueeze(3)
+        inputs = inputs.view((-1, 1, embedding_dim, 1))
+        outputs = outputs.view((-1, 1, embedding_dim, 1))
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
