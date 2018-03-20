@@ -36,8 +36,8 @@ class CNN2DDeepFeatureSelector(nn.Module):
         self.conv2 = nn.Conv1d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=(n_gram, kernel_sizes[1]))
 
         # Linear layer 1
-        self.linear_size = out_channels[1] * n_gram * kernel_sizes[1]
-        self.linear = nn.Linear(out_channels[1] * kernel_sizes[1], n_features)
+        self.linear_size = out_channels[1] * 72
+        self.linear = nn.Linear(self.linear_size, n_features)
 
         # Linear layer 2
         self.linear2 = nn.Linear(self.n_features, n_authors)
@@ -61,7 +61,8 @@ class CNN2DDeepFeatureSelector(nn.Module):
 
         # Max pooling
         max_pooled = self.max_pool_w1(out_conv2)
-
+        print(max_pooled.size())
+        exit()
         # Flatten
         out = max_pooled.view(-1, self.linear_size)
 

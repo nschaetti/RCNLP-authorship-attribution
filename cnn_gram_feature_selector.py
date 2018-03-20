@@ -28,7 +28,7 @@ import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
-from modules import CNNDeepFeatureSelector, CNNFeatureSelector
+from modules import CNN2DDeepFeatureSelector, CNN2DFeatureSelector
 from torch import optim
 import torch.nn as nn
 import echotorch.nn as etnn
@@ -52,7 +52,7 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 
 # Model
 # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-model = CNNDeepFeatureSelector(n_authors=n_authors)
+model = CNN2DDeepFeatureSelector(n_authors=n_authors)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
@@ -76,7 +76,7 @@ for epoch in range(n_epoch):
     for i, data in enumerate(reutersloader):
         # Inputs and labels
         sample_inputs, labels, time_labels = data
-        print(sample_inputs.size())
+
         # Create inputs
         inputs = torch.zeros(sample_inputs.size(1)-n_gram+1, n_gram, embedding_dim)
         for i in np.arange(n_gram, sample_inputs.size(0)+1):
@@ -85,8 +85,7 @@ for epoch in range(n_epoch):
 
         # Outputs
         outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
-        print(inputs.size())
-        exit()
+
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
         # inputs, outputs = inputs.cuda(), outputs.cuda()
