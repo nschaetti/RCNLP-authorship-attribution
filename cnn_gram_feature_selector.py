@@ -37,7 +37,7 @@ n_epoch = 30
 embedding_dim = 300
 n_authors = 15
 n_gram = 2
-use_cuda = True
+use_cuda = False
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -49,13 +49,13 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 
 # Model
 # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors)
+model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors, n_features=60)
 if use_cuda:
     model.cuda()
 # end if
 
 # Optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
 
 # Loss function
 loss_function = nn.NLLLoss()
@@ -79,7 +79,7 @@ for epoch in range(n_epoch):
 
         # Create inputs
         inputs = torch.zeros(sample_inputs.size(1)-n_gram+1, 1, n_gram, embedding_dim)
-        for i in np.arange(n_gram, sample_inputs.size(0)+1):
+        for i in np.arange(n_gram, sample_inputs.size(1)+1):
             inputs[i-n_gram, 0] = sample_inputs[0, i-n_gram:i]
         # end for
 
@@ -123,7 +123,7 @@ for epoch in range(n_epoch):
 
         # Create inputs
         inputs = torch.zeros(sample_inputs.size(1) - n_gram + 1, 1, n_gram, embedding_dim)
-        for i in np.arange(n_gram, sample_inputs.size(0) + 1):
+        for i in np.arange(n_gram, sample_inputs.size(1)+1):
             inputs[i - n_gram, 0] = sample_inputs[0, i - n_gram:i]
         # end for
 
@@ -139,7 +139,7 @@ for epoch in range(n_epoch):
         # Forward
         model_outputs = model(inputs)
         loss = loss_function(model_outputs, outputs)
-
+        # print(model_outputs)
         # Take the max as predicted
         _, predicted = torch.max(model_outputs.data, 1)
 
