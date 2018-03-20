@@ -129,7 +129,7 @@ for epoch in range(n_epoch):
         loss = loss_function(model_outputs, outputs)
 
         # Take the max as predicted
-        _, predicted = torch.max(outputs.data, 1)
+        _, predicted = torch.max(model_outputs.data, 1)
 
         # Add to correctly classified word
         success += (predicted == outputs.data).sum()
