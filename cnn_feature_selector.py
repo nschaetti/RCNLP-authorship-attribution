@@ -93,7 +93,7 @@ for epoch in range(n_epoch):
 
         # Loss
         loss = loss_function(log_probs, outputs)
-        print(loss.data[0])
+
         # Backward and step
         loss.backward()
         optimizer.step()
