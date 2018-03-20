@@ -82,9 +82,9 @@ for epoch in range(n_epoch):
         for i in np.arange(n_gram, sample_inputs.size(0)+1):
             inputs[i-n_gram] = sample_inputs[0, i-n_gram:i]
         # end for
-
+        print(inputs.size())
         # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
         print(inputs.size())
         exit()
         # To variable
