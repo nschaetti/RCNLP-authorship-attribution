@@ -133,6 +133,7 @@ for epoch in range(n_epoch):
 
         # Add to correctly classified word
         success += (predicted == outputs.data).sum()
+        total += predicted.size(0)
 
         # Add loss
         test_loss += loss.data[0]
