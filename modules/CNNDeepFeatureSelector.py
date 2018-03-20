@@ -14,11 +14,10 @@ class CNNDeepFeatureSelector(nn.Module):
     """
 
     # Constructor
-    def __init__(self, n_authors=15, embedding_dim=300, out_channels=(20, 10), kernel_sizes=(5, 5), max_pool_size=2, n_features=30):
+    def __init__(self, n_authors=15, out_channels=(20, 10), kernel_sizes=(5, 5), max_pool_size=2, n_features=30):
         """
         Constructor
         :param n_authors:
-        :param embedding_dim: Embedding layer dimension
         :param out_channels: Number of output channels
         :param kernel_sizes: Different kernel sizes
         """
