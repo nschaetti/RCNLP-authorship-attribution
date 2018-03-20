@@ -64,8 +64,7 @@ class CNN2DDeepFeatureSelector(nn.Module):
 
         # Max pooling
         max_pooled = self.max_pool(out_conv2)
-        print(max_pooled.size())
-        exit()
+
         # Flatten
         out = max_pooled.view(-1, self.linear_size)
 
