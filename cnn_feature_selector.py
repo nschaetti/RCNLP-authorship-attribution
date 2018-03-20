@@ -117,8 +117,11 @@ for epoch in range(n_epoch):
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
+        # Channel
+        inputs = inputs.view((-1, 1, embedding_dim))
+
         # To variable
-        inputs, outputs = Variable(inputs.squeeze(0)), Variable(outputs)
+        inputs, outputs = Variable(inputs), Variable(outputs)
         # inputs, outputs = inputs.cuda(), outputs.cuda()
 
         # Forward
