@@ -14,7 +14,7 @@ class CNNFeatureSelector(nn.Module):
     """
 
     # Constructor
-    def __init__(self, n_authors=15, embedding_dim=300, out_channels=(10, 10, 10), kernel_sizes=(3, 5, 10), n_features=30):
+    def __init__(self, n_authors=15, embedding_dim=300, out_channels=(20, 20, 20), kernel_sizes=(3, 5, 10), n_features=30):
         """
         Constructor
         :param n_authors:
