@@ -67,19 +67,22 @@ class CNNFeatureSelector(nn.Module):
 
         # Concatenate
         out = torch.cat((max_win1, max_win2, max_win3), dim=1)
-        print(out.size())
+
         # Flatten
         out = out.view(-1, self.linear_size)
-        print(out.size())
+
         # Linear 1
         out = F.relu(self.linear(out))
-        print(out.size())
+
         # Linear 2
         out = F.relu(self.linear2(out))
-        print(out.size())
+
+        # Log softmax
+        log_prob = F.log_softmax(out, dim=1)
+        print(log_prob.size())
         exit()
         # Log Softmax
-        return F.log_softmax(out, dim=1)
+        return log_prob
     # end forward
 
 # end CNNT
