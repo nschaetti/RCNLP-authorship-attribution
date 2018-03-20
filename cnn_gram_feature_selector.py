@@ -22,7 +22,6 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import nsNLP
 import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
@@ -31,9 +30,6 @@ from echotorch.transforms import text
 from modules import CNN2DDeepFeatureSelector, CNN2DFeatureSelector
 from torch import optim
 import torch.nn as nn
-import echotorch.nn as etnn
-import echotorch.utils
-import os
 
 
 # Settings
@@ -41,6 +37,7 @@ n_epoch = 30
 embedding_dim = 300
 n_authors = 15
 n_gram = 2
+use_cuda = True
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -53,6 +50,9 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 # Model
 # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
 model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors)
+if use_cuda:
+    model.cuda()
+# end if
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
@@ -88,7 +88,9 @@ for epoch in range(n_epoch):
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
-        # inputs, outputs = inputs.cuda(), outputs.cuda()
+        if use_cuda:
+            inputs, outputs = inputs.cuda(), outputs.cuda()
+        # end if
 
         # Zero grad
         model.zero_grad()
@@ -130,7 +132,9 @@ for epoch in range(n_epoch):
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
-        # inputs, outputs = inputs.cuda(), outputs.cuda()
+        if use_cuda:
+            inputs, outputs = inputs.cuda(), outputs.cuda()
+        # end if
 
         # Forward
         model_outputs = model(inputs)
