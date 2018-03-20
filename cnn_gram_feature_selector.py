@@ -79,7 +79,7 @@ for epoch in range(n_epoch):
 
         # Create inputs
         inputs = torch.FloatTensor(sample_inputs.size(0)-n_gram+1, n_gram, embedding_dim)
-        for i in np.arange(n_gram, inputs.size(0)+1):
+        for i in np.arange(n_gram, sample_inputs.size(0)+1):
             inputs[i-n_gram] = sample_inputs[0, i-n_gram:i]
         # end for
 
