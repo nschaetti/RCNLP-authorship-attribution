@@ -60,19 +60,14 @@ class CNNFeatureSelector(nn.Module):
         out_win2 = F.relu(self.conv_w2(x))
         out_win3 = F.relu(self.conv_w3(x))
 
-        # Remove last dim
-        out_win1 = torch.squeeze(out_win1, dim=3)
-        out_win2 = torch.squeeze(out_win2, dim=3)
-        out_win3 = torch.squeeze(out_win3, dim=3)
-        print(out_win1.size())
-        print(out_win2.size())
-        print(out_win3.size())
-        exit()
         # Max pooling
         max_win1 = self.max_pool_w1(out_win1)
         max_win2 = self.max_pool_w2(out_win2)
         max_win3 = self.max_pool_w3(out_win3)
-
+        print(out_win1.size())
+        print(out_win2.size())
+        print(out_win3.size())
+        exit()
         # Concatenate
         out = torch.cat((max_win1, max_win2, max_win3), dim=1)
 
