@@ -58,21 +58,10 @@ class CNNFeatureSelector(nn.Module):
         :param x:
         :return:
         """
-        # Embeddings
-        if self.embeddings_dim > 0:
-            embeds = self.embeddings(x)
-
-            # Add channel dim
-            embeds = torch.unsqueeze(embeds, dim=1)
-        else:
-            # Add channel dim
-            embeds = torch.unsqueeze(x, dim=1)
-        # end if
-
         # Conv window
-        out_win1 = F.relu(self.conv_w1(embeds))
-        out_win2 = F.relu(self.conv_w2(embeds))
-        out_win3 = F.relu(self.conv_w3(embeds))
+        out_win1 = F.relu(self.conv_w1(x))
+        out_win2 = F.relu(self.conv_w2(x))
+        out_win3 = F.relu(self.conv_w3(x))
 
         # Remove last dim
         out_win1 = torch.squeeze(out_win1, dim=3)
