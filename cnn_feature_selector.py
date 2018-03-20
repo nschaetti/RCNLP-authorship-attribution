@@ -79,7 +79,7 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
         # Channel
-        inputs = inputs.view((-1, 1, embedding_dim, 1))
+        inputs = inputs.view((-1, 1, embedding_dim))
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
