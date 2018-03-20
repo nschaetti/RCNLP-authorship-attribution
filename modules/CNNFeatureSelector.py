@@ -71,8 +71,11 @@ class CNNFeatureSelector(nn.Module):
         # Flatten
         out = out.view(-1, self.linear_size)
         print(out.size())
-        # Linear
-        out = self.linear(out)
+        # Linear 1
+        out = F.relu(self.linear(out))
+        print(out.size())
+        # Linear 2
+        out = F.relu(self.linear2(out))
         print(out.size())
         exit()
         # Log Softmax
