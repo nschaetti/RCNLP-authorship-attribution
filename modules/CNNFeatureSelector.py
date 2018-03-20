@@ -28,15 +28,15 @@ class CNNFeatureSelector(nn.Module):
 
         # Conv window 1
         self.conv_w1 = nn.Conv2d(in_channels=1, out_channels=out_channels[0],
-                                 kernel_size=(kernel_sizes[0], embedding_dim))
+                                 kernel_size=(kernel_sizes[0]))
 
         # Conv window 2
         self.conv_w2 = nn.Conv2d(in_channels=1, out_channels=out_channels[1],
-                                 kernel_size=(kernel_sizes[1], embedding_dim))
+                                 kernel_size=(kernel_sizes[1]))
 
         # Conv window 3
         self.conv_w3 = nn.Conv2d(in_channels=1, out_channels=out_channels[2],
-                                 kernel_size=(kernel_sizes[2], embedding_dim))
+                                 kernel_size=(kernel_sizes[2]))
 
         # Max pooling layer
         self.max_pool_w1 = nn.MaxPool1d(kernel_size=140 - out_channels[0] + 1, stride=0)
