@@ -69,6 +69,7 @@ for epoch in range(n_epoch):
         print(inputs.size())
         print(time_labels.size())
         print(inputs)
+        exit()
     # end for
 
     # Set test mode
