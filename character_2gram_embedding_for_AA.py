@@ -81,16 +81,8 @@ for epoch in range(n_epoch):
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
-        print(inputs)
-        print(outputs)
-
-        for j in range(40):
-            print(transform.ix_to_gram[inputs[0, j]])
-        # end for
-
-        exit()
         # Shape
-        """inputs = inputs.squeeze(0)
+        inputs = inputs.squeeze(0)
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
@@ -112,7 +104,7 @@ for epoch in range(n_epoch):
         optimizer.step()
 
         # Add
-        training_loss += loss.data[0]"""
+        training_loss += loss.data[0]
     # end for
 
     # Set test mode
@@ -131,7 +123,7 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
         # Shape
-        """inputs = inputs.squeeze(0)
+        inputs = inputs.squeeze(0)
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
@@ -151,10 +143,10 @@ for epoch in range(n_epoch):
         total += predicted.size(0)
 
         # Add loss
-        test_loss += loss.data[0]"""
+        test_loss += loss.data[0]
     # end for
 
     # Print and save loss
-    # print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
-    #                                                                      success / total * 100.0))
+    print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
+                                                                          success / total * 100.0))
 # end for
