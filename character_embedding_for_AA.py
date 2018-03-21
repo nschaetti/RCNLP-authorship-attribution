@@ -65,7 +65,9 @@ for epoch in range(n_epoch):
         print(inputs.size())
         print(labels)
         print(time_labels.size())
-        print(inputs[:20])
+        for t in range(20):
+            print(inputs[t])
+        # end for
         exit()
     # end for
 
