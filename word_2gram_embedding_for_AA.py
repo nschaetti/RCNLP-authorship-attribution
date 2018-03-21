@@ -42,7 +42,7 @@ embedding_dim = 10
 n_authors = 15
 use_cuda = True
 voc_size = 29395
-n_gram = 2
+n_gram = 3
 
 # Word embedding
 transform = text.Token()
