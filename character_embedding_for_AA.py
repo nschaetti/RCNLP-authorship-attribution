@@ -28,7 +28,7 @@ import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
-from modules import CNNDeepFeatureSelector, CNNFeatureSelector
+from modules import CNNCharacterEmbedding, CNNDeepFeatureSelector, CNNFeatureSelector
 from torch import optim
 import torch.nn as nn
 import echotorch.nn as etnn
@@ -38,9 +38,10 @@ import os
 
 # Settings
 n_epoch = 1
-embedding_dim = 300
+embedding_dim = 10
 n_authors = 15
 use_cuda = True
+voc_size = 58
 
 # Word embedding
 transform = text.Character()
@@ -50,31 +51,32 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
                                                                        transform=transform),
                                             batch_size=1, shuffle=False)
 
+# Model
+model = CNNCharacterEmbedding(voc_size=voc_size, embedding_dim=embedding_dim)
+
 # Set fold and training mode
 reutersloader.dataset.set_fold(0)
 
 # Epoch
 for epoch in range(n_epoch):
-    for k in range(10):
-        # Set training mode
-        reutersloader.dataset.set_fold(k)
-        reutersloader.dataset.set_train(True)
+    # Set training mode
+    reutersloader.dataset.set_train(True)
 
-        # Get test data for this fold
-        for i, data in enumerate(reutersloader):
-            # Inputs and labels
-            inputs, labels, time_labels = data
-        # end for
+    # Get test data for this fold
+    for i, data in enumerate(reutersloader):
+        # Inputs and labels
+        inputs, labels, time_labels = data
+        print(inputs.size())
+        print(time_labels.size())
+        print(inputs)
+    # end for
 
-        # Set test mode
-        reutersloader.dataset.set_train(False)
+    # Set test mode
+    reutersloader.dataset.set_train(False)
 
-        # For each test sample
-        for i, data in enumerate(reutersloader):
-            # Inputs and labels
-            inputs, labels, time_labels = data
-        # end for
+    # For each test sample
+    for i, data in enumerate(reutersloader):
+        # Inputs and labels
+        inputs, labels, time_labels = data
     # end for
 # end for
-
-print(len(transform.gram_to_ix))
