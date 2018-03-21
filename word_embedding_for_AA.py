@@ -41,7 +41,7 @@ n_epoch = 1
 embedding_dim = 10
 n_authors = 15
 use_cuda = True
-voc_size = 58
+voc_size = 29395
 
 # Word embedding
 transform = text.Token()
@@ -102,7 +102,7 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
 
         # To variable
-        """inputs, outputs = Variable(inputs), Variable(outputs)
+        inputs, outputs = Variable(inputs), Variable(outputs)
         if use_cuda:
             inputs, outputs = inputs.cuda(), outputs.cuda()
         # end if
@@ -121,7 +121,7 @@ for epoch in range(n_epoch):
         optimizer.step()
 
         # Add
-        training_loss += loss.data[0]"""
+        training_loss += loss.data[0]
     # end for
 
     # Set test mode
@@ -155,7 +155,7 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
 
         # Shape
-        """inputs = inputs.squeeze(0)
+        inputs = inputs.squeeze(0)
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
@@ -175,12 +175,10 @@ for epoch in range(n_epoch):
         total += predicted.size(0)
 
         # Add loss
-        test_loss += loss.data[0]"""
+        test_loss += loss.data[0]
     # end for
 
     # Print and save loss
-    # print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
-    #                                                                       success / total * 100.0))
+    print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
+                                                                          success / total * 100.0))
 # end for
-
-print(voc_size)
