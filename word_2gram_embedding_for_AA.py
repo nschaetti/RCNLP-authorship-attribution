@@ -91,7 +91,7 @@ for epoch in range(n_epoch):
         input_index = 0
         for j in np.arange(n_gram-1, len(sample_inputs)):
             gram_index = 0
-            for k in np.arange(n_gram-1, 0, -1):
+            for k in np.arange(n_gram-1, -1, -1):
                 print(k)
                 token = sample_inputs[j-k]
                 if token not in token_to_ix:
