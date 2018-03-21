@@ -51,6 +51,11 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
                                                                        transform=transform),
                                             batch_size=1, shuffle=False)
 
+# Token to ix
+token_to_ix = dict()
+ix_to_token = dict()
+voc_size = 0
+
 # Model
 model = CNNCharacterEmbedding(voc_size=voc_size, embedding_dim=embedding_dim)
 
@@ -76,15 +81,29 @@ for epoch in range(n_epoch):
     # Get test data for this fold
     for i, data in enumerate(reutersloader):
         # Inputs and labels
-        inputs, label = data[0], data[1]
-        print(inputs)
-        print(label)
-        exit()
-        # Outputs
-        """outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        sample_inputs, sample_label = data[0], data[1]
 
-        # Shape
-        inputs = inputs.squeeze(0)
+        # Inputs
+        inputs = torch.LongTensor(len(sample_inputs))
+
+        # For each token
+        j = 0
+        for token in sample_inputs:
+            if token not in token_to_ix:
+                token_to_ix[token] = voc_size
+                ix_to_token[voc_size] = token
+                voc_size += 1
+            # end if
+            inputs[j] = token_to_ix[token]
+            j += 1
+        # end for
+
+        # Outputs
+        outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
+
+        print(inputs)
+        print(outputs)
+        exit()
 
         # To variable
         inputs, outputs = Variable(inputs), Variable(outputs)
@@ -106,7 +125,7 @@ for epoch in range(n_epoch):
         optimizer.step()
 
         # Add
-        training_loss += loss.data[0]"""
+        training_loss += loss.data[0]
     # end for
 
     # Set test mode
