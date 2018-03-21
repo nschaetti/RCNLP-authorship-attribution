@@ -30,7 +30,7 @@ import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
-from modules import CNN2DDeepFeatureSelector, CNN2DFeatureSelector
+from modules import CNN2DDeepFeatureSelector
 from torch import optim
 import torch.nn as nn
 
