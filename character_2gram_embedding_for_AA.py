@@ -41,7 +41,7 @@ n_epoch = 1
 embedding_dim = 10
 n_authors = 15
 use_cuda = True
-voc_size = 58
+voc_size = 1595
 
 # Word embedding
 transform = text.Character2Gram()
@@ -80,6 +80,9 @@ for epoch in range(n_epoch):
 
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+
+        print(inputs)
+        print(outputs)
 
         # Shape
         """inputs = inputs.squeeze(0)
@@ -150,5 +153,3 @@ for epoch in range(n_epoch):
     # print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
     #                                                                      success / total * 100.0))
 # end for
-
-print(len(transform.gram_to_ix))
