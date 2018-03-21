@@ -74,21 +74,13 @@ for epoch in range(n_epoch):
     reutersloader.dataset.set_train(True)
 
     # Get test data for this fold
-    for i, data in enumerate(reutersloader):
+    for i, data in enumerate(reutersloader)
+        print(i)
         # Inputs and labels
         inputs, labels, _ = data
 
         # Outputs
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
-
-        print(inputs)
-        print(outputs)
-
-        for j in range(20):
-            print(transform.ix_to_gram[inputs[0, j]])
-        # end for
-
-        exit()
 
         # Shape
         """inputs = inputs.squeeze(0)
@@ -125,6 +117,7 @@ for epoch in range(n_epoch):
 
     # For each test sample
     for i, data in enumerate(reutersloader):
+        print(i)
         # Inputs and labels
         inputs, labels, _ = data
 
