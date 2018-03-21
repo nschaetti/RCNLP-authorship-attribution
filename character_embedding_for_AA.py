@@ -54,11 +54,22 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 # Model
 model = CNNCharacterEmbedding(voc_size=voc_size, embedding_dim=embedding_dim)
 
+# Optimizer
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+# Loss function
+# loss_function = nn.NLLLoss()
+loss_function = nn.CrossEntropyLoss()
+
 # Set fold and training mode
 reutersloader.dataset.set_fold(0)
 
 # Epoch
 for epoch in range(n_epoch):
+    # Total losses
+    training_loss = 0.0
+    test_loss = 0.0
+
     # Set training mode
     reutersloader.dataset.set_train(True)
 
@@ -73,17 +84,69 @@ for epoch in range(n_epoch):
         # Shape
         inputs = inputs.squeeze(0)
 
-        print(inputs)
-        print(outputs)
-        exit()
+        # To variable
+        inputs, outputs = Variable(inputs), Variable(outputs)
+        if use_cuda:
+            inputs, outputs = inputs.cuda(), outputs.cuda()
+        # end if
+
+        # Zero grad
+        model.zero_grad()
+
+        # Compute output
+        log_probs = model(inputs)
+
+        # Loss
+        loss = loss_function(log_probs, outputs)
+
+        # Backward and step
+        loss.backward()
+        optimizer.step()
+
+        # Add
+        training_loss += loss.data[0]
     # end for
 
     # Set test mode
     reutersloader.dataset.set_train(False)
 
+    # Counters
+    total = 0.0
+    success = 0.0
+
     # For each test sample
     for i, data in enumerate(reutersloader):
         # Inputs and labels
-        inputs, labels, time_labels = data
+        inputs, labels, _ = data
+
+        # Outputs
+        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+
+        # Shape
+        inputs = inputs.squeeze(0)
+
+        # To variable
+        inputs, outputs = Variable(inputs), Variable(outputs)
+        if use_cuda:
+            inputs, outputs = inputs.cuda(), outputs.cuda()
+        # end if
+
+        # Forward
+        model_outputs = model(inputs)
+        loss = loss_function(model_outputs, outputs)
+
+        # Take the max as predicted
+        _, predicted = torch.max(model_outputs.data, 1)
+
+        # Add to correctly classified word
+        success += (predicted == outputs.data).sum()
+        total += predicted.size(0)
+
+        # Add loss
+        test_loss += loss.data[0]
     # end for
+
+    # Print and save loss
+    print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
+                                                                          success / total * 100.0))
 # end for
