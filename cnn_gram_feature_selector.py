@@ -164,7 +164,7 @@ for k in range(10):
     # end for
 
     # Print and save loss
-    print(u"Training loss {}, test loss {}, accuracy {}".format(training_loss, test_loss, success / total * 100.0))
+    print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss, success / total * 100.0))
 
     # Save model
     torch.save(model, open(os.path.join(args.output, u"cnn_" + str(n_gram) + u"gram_feature_extractor." + str(k) + u".p")))
