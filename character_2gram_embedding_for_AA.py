@@ -83,7 +83,7 @@ for epoch in range(n_epoch):
 
         print(inputs)
         print(outputs)
-
+        exit()
         # Shape
         """inputs = inputs.squeeze(0)
 
