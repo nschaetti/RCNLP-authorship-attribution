@@ -77,7 +77,7 @@ for epoch in range(n_epoch):
     for i, data in enumerate(reutersloader):
         # Inputs and labels
         inputs = data
-        print(inputs)
+        print(type(inputs))
         exit()
         # Outputs
         """outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
