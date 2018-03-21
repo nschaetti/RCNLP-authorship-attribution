@@ -76,7 +76,7 @@ for epoch in range(n_epoch):
     # Get test data for this fold
     for i, data in enumerate(reutersloader):
         # Inputs and labels
-        inputs = data
+        inputs, label = data
         print(type(inputs))
         exit()
         # Outputs
