@@ -85,7 +85,7 @@ for epoch in range(n_epoch):
         sample_inputs, sample_label = data[0], data[1]
 
         # Inputs
-        inputs = torch.LongTensor(len(sample_inputs), n_gram)
+        inputs = torch.LongTensor(len(sample_inputs)-n_gram+1, n_gram)
 
         # For each token
         input_index = 0
@@ -101,7 +101,7 @@ for epoch in range(n_epoch):
                 inputs[input_index, gram_index] = token_to_ix[token]
                 gram_index += 1
             # end for
-            print(input_index)
+            print(j)
             print(inputs[input_index])
             input_index += 1
         # end for
