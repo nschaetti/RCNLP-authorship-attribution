@@ -55,31 +55,26 @@ reutersloader.dataset.set_fold(0)
 
 # Epoch
 for epoch in range(n_epoch):
-    # Set training mode
-    reutersloader.dataset.set_train(True)
+    for k in range(10):
+        # Set training mode
+        reutersloader.dataset.set_fold(k)
+        reutersloader.dataset.set_train(True)
 
-    # Get test data for this fold
-    for i, data in enumerate(reutersloader):
-        # Inputs and labels
-        inputs, labels, time_labels = data
-        print(inputs.size())
-        print(labels)
-        print(time_labels.size())
-        for t in range(20):
-            print(transform.ix_to_gram[inputs[0, t]])
+        # Get test data for this fold
+        for i, data in enumerate(reutersloader):
+            # Inputs and labels
+            inputs, labels, time_labels = data
         # end for
-        exit()
-    # end for
 
-    # Set test mode
-    reutersloader.dataset.set_train(False)
+        # Set test mode
+        reutersloader.dataset.set_train(False)
 
-    # For each test sample
-    for i, data in enumerate(reutersloader):
-        # Inputs and labels
-        inputs, labels, time_labels = data
-
-        # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        # For each test sample
+        for i, data in enumerate(reutersloader):
+            # Inputs and labels
+            inputs, labels, time_labels = data
+        # end for
     # end for
 # end for
+
+print(len(transform.gram_to_ix))
