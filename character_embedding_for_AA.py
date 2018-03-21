@@ -66,7 +66,7 @@ for epoch in range(n_epoch):
         print(labels)
         print(time_labels.size())
         for t in range(20):
-            print(inputs[0, t])
+            print(transform.ix_to_gram[inputs[0, t]])
         # end for
         exit()
     # end for
