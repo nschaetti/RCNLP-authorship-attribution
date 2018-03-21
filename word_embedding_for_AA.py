@@ -76,9 +76,8 @@ for epoch in range(n_epoch):
     # Get test data for this fold
     for i, data in enumerate(reutersloader):
         # Inputs and labels
-        inputs, labels = data
+        inputs = data
         print(inputs)
-        print(labels)
         exit()
         # Outputs
         """outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
