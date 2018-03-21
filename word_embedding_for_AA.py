@@ -101,12 +101,8 @@ for epoch in range(n_epoch):
         # Outputs
         outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
 
-        print(inputs)
-        print(outputs)
-        exit()
-
         # To variable
-        inputs, outputs = Variable(inputs), Variable(outputs)
+        """inputs, outputs = Variable(inputs), Variable(outputs)
         if use_cuda:
             inputs, outputs = inputs.cuda(), outputs.cuda()
         # end if
@@ -125,7 +121,7 @@ for epoch in range(n_epoch):
         optimizer.step()
 
         # Add
-        training_loss += loss.data[0]
+        training_loss += loss.data[0]"""
     # end for
 
     # Set test mode
@@ -138,10 +134,25 @@ for epoch in range(n_epoch):
     # For each test sample
     for i, data in enumerate(reutersloader):
         # Inputs and labels
-        inputs, labels, _ = data
+        sample_inputs, sample_label = data[0], data[1]
+
+        # Inputs
+        inputs = torch.LongTensor(len(sample_inputs))
+
+        # For each token
+        j = 0
+        for token in sample_inputs:
+            if token not in token_to_ix:
+                token_to_ix[token] = voc_size
+                ix_to_token[voc_size] = token
+                voc_size += 1
+            # end if
+            inputs[j] = token_to_ix[token]
+            j += 1
+        # end for
 
         # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
 
         # Shape
         """inputs = inputs.squeeze(0)
@@ -171,3 +182,5 @@ for epoch in range(n_epoch):
     # print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
     #                                                                       success / total * 100.0))
 # end for
+
+print(voc_size)
