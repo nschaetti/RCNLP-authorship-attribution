@@ -85,7 +85,7 @@ for epoch in range(n_epoch):
         print(outputs)
 
         for j in range(20):
-            print(transform.gram_to_ix[inputs[0, j]])
+            print(transform.ix_to_gram[inputs[0, j]])
         # end for
 
         exit()
