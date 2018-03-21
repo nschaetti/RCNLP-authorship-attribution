@@ -71,7 +71,7 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
         # Shape
-        inputs = inputs.unsqueeze(0)
+        inputs = inputs.squeeze(0)
 
         print(inputs)
         print(outputs)
