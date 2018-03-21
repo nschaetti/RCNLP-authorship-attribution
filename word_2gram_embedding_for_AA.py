@@ -110,6 +110,7 @@ for epoch in range(n_epoch):
         outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
         print(inputs)
         print(outputs)
+        print(len(sample_inputs))
         exit()
 
         # To variable
