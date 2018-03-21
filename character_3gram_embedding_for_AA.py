@@ -74,7 +74,7 @@ for epoch in range(n_epoch):
     reutersloader.dataset.set_train(True)
 
     # Get test data for this fold
-    for i, data in enumerate(reutersloader)
+    for i, data in enumerate(reutersloader):
         print(i)
         # Inputs and labels
         inputs, labels, _ = data
