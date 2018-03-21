@@ -92,7 +92,6 @@ for epoch in range(n_epoch):
         for j in np.arange(n_gram-1, len(sample_inputs)):
             gram_index = 0
             for k in np.arange(n_gram-1, -1, -1):
-                print(k)
                 token = sample_inputs[j-k]
                 if token not in token_to_ix:
                     token_to_ix[token] = voc_size
@@ -102,6 +101,7 @@ for epoch in range(n_epoch):
                 inputs[input_index, gram_index] = token_to_ix[token]
                 gram_index += 1
             # end for
+            print(inputs[input_index, gram_index])
             input_index += 1
             exit()
         # end for
