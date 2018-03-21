@@ -22,25 +22,29 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import nsNLP
-import numpy as np
+# Imports
+import os
+import argparse
 import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
-from modules import CNNDeepFeatureSelector, CNNFeatureSelector
+from modules import CNNDeepFeatureSelector
 from torch import optim
 import torch.nn as nn
-import echotorch.nn as etnn
-import echotorch.utils
-import os
-
 
 # Settings
-n_epoch = 100
+n_epoch = 500
 embedding_dim = 300
 n_authors = 15
 use_cuda = True
+
+# Argument parser
+parser = argparse.ArgumentParser(description="CNN feature extraction")
+
+# Argument
+parser.add_argument("--output", type=str, help="Embedding output file", default='char_embedding.p')
+args = parser.parse_args()
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -50,106 +54,112 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
                                                                        transform=transform),
                                             batch_size=1, shuffle=False)
 
-# Model
-# model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-model = CNNDeepFeatureSelector(n_authors=n_authors)
-if use_cuda:
-    model.cuda()
-# end if
-
-# Optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
 # Loss function
 # loss_function = nn.NLLLoss()
 loss_function = nn.CrossEntropyLoss()
 
-# Set fold and training mode
-reutersloader.dataset.set_fold(0)
+# 10-CV
+for k in range(10):
+    # Model
+    # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
+    model = CNNDeepFeatureSelector(n_authors=n_authors)
+    if use_cuda:
+        model.cuda()
+    # end if
 
-# Epoch
-for epoch in range(n_epoch):
-    # Total losses
-    training_loss = 0.0
-    test_loss = 0.0
+    # Optimizer
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-    # Set training mode
-    reutersloader.dataset.set_train(True)
+    # Epoch
+    for epoch in range(n_epoch):
+        # Total losses
+        training_loss = 0.0
+        test_loss = 0.0
 
-    # Get test data for this fold
-    for i, data in enumerate(reutersloader):
-        # Inputs and labels
-        inputs, labels, time_labels = data
+        # Set fold and training mode
+        reutersloader.dataset.set_fold(k)
+        reutersloader.dataset.set_train(True)
 
-        # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        # Get test data for this fold
+        for i, data in enumerate(reutersloader):
+            # Inputs and labels
+            inputs, labels, time_labels = data
 
-        # Channel
-        inputs = inputs.view((-1, 1, embedding_dim))
+            # Outputs
+            outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
-        # To variable
-        inputs, outputs = Variable(inputs), Variable(outputs)
-        if use_cuda:
-            inputs, outputs = inputs.cuda(), outputs.cuda()
-        # end if
+            # Channel
+            inputs = inputs.view((-1, 1, embedding_dim))
 
-        # Zero grad
-        model.zero_grad()
+            # To variable
+            inputs, outputs = Variable(inputs), Variable(outputs)
+            if use_cuda:
+                inputs, outputs = inputs.cuda(), outputs.cuda()
+            # end if
 
-        # Compute output
-        log_probs = model(inputs)
+            # Zero grad
+            model.zero_grad()
 
-        # Loss
-        loss = loss_function(log_probs, outputs)
+            # Compute output
+            log_probs = model(inputs)
 
-        # Backward and step
-        loss.backward()
-        optimizer.step()
+            # Loss
+            loss = loss_function(log_probs, outputs)
 
-        # Add
-        training_loss += loss.data[0]
-    # end for
+            # Backward and step
+            loss.backward()
+            optimizer.step()
 
-    # Set test mode
-    reutersloader.dataset.set_train(False)
+            # Add
+            training_loss += loss.data[0]
+        # end for
 
-    # Counters
-    total = 0.0
-    success = 0.0
+        # Set test mode
+        reutersloader.dataset.set_train(False)
 
-    # For each test sample
-    for i, data in enumerate(reutersloader):
-        # Inputs and labels
-        inputs, labels, time_labels = data
+        # Counters
+        total = 0.0
+        success = 0.0
 
-        # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        # For each test sample
+        for i, data in enumerate(reutersloader):
+            # Inputs and labels
+            inputs, labels, time_labels = data
 
-        # Channel
-        inputs = inputs.view((-1, 1, embedding_dim))
+            # Outputs
+            outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
 
-        # To variable
-        inputs, outputs = Variable(inputs), Variable(outputs)
-        if use_cuda:
-            inputs, outputs = inputs.cuda(), outputs.cuda()
-        # end if
+            # Channel
+            inputs = inputs.view((-1, 1, embedding_dim))
 
-        # Forward
-        model_outputs = model(inputs)
-        loss = loss_function(model_outputs, outputs)
+            # To variable
+            inputs, outputs = Variable(inputs), Variable(outputs)
+            if use_cuda:
+                inputs, outputs = inputs.cuda(), outputs.cuda()
+            # end if
 
-        # Take the max as predicted
-        _, predicted = torch.max(model_outputs.data, 1)
+            # Forward
+            model_outputs = model(inputs)
+            loss = loss_function(model_outputs, outputs)
 
-        # Add to correctly classified word
-        success += (predicted == outputs.data).sum()
-        total += predicted.size(0)
+            # Take the max as predicted
+            _, predicted = torch.max(model_outputs.data, 1)
 
-        # Add loss
-        test_loss += loss.data[0]
+            # Add to correctly classified word
+            success += (predicted == outputs.data).sum()
+            total += predicted.size(0)
+
+            # Add loss
+            test_loss += loss.data[0]
+        # end for
     # end for
 
     # Print and save loss
-    print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
-                                                                          success / total * 100.0))
+    print(u"Training loss {}, test loss {}, accuracy {}".format(training_loss, test_loss, success / total * 100.0))
+
+    # Save model
+    torch.save(model, open(os.path.join(args.output, u"cnn_feature_extractor." + str(k) + u".p")))
+
+    # Reset model
+    model = None
 # end for
