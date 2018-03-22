@@ -53,6 +53,18 @@ def converter_in(converters_desc, converter):
     return False
 # end converter_in
 
+
+# Load character embedding
+def load_character_embedding(emb_path):
+    """
+    Load character embedding
+    :param emb_path:
+    :return:
+    """
+    token_to_ix, weights = torch.load(open(emb_path, 'rb'))
+    return token_to_ix, weights.data.cpu()
+# end load_character_embedding
+
 ####################################################
 # Main
 ####################################################
@@ -90,7 +102,7 @@ args.add_argument(command="--input-sparsity", name="input_sparsity", type=str, h
 args.add_argument(command="--w-sparsity", name="w_sparsity", type=str, help="W sparsity", extended=True,
                   default="0.05")
 args.add_argument(command="--transformer", name="transformer", type=str,
-                  help="The text transformer to use (fw, pos, tag, wv, oh)", default='wv', extended=True)
+                  help="The text transformer to use (fw, pos, tag, wv, c1, c2, c3, cnn)", default='wv', extended=True)
 args.add_argument(command="--pca-path", name="pca_path", type=str, help="PCA model to load", default=None,
                   extended=False)
 args.add_argument(command="--keep-w", name="keep_w", action='store_true', help="Keep W matrix", default=False,
@@ -111,7 +123,7 @@ args.add_argument(command="--tokenizer", name="tokenizer", type=str,
                   help="Which tokenizer to use (spacy, nltk, spacy-tokens)", default='nltk', extended=False)
 args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
                   default='en_vectors_web_lg', extended=True)
-args.add_argument(command="--embedding", name="embedding", type=str, help="Which word embedding to use? (glove, word2vec, skipgram)",
+args.add_argument(command="--embedding", name="embedding", type=str, help="Which word embedding to use? (glove, word2vec, skipgram, pretrained)",
                   default='glove', extended=True)
 args.add_argument(command="--embedding-path", name="embedding_path", type=str, help="Embedding directory",
                   default='~/Projets/TURING/Datasets/', extended=False)
@@ -211,8 +223,21 @@ for space in param_space:
         reutersloader.dataset.transform = text.PartOfSpeech(model=lang)
     elif "tag" in transformer:
         reutersloader.dataset.transform = text.Tag(model=lang)
-    elif "character" in transformer:
-        reutersloader.dataset.transform = text.Character()
+    elif "c1" in transformer:
+        token_to_ix, embedding_weights = load_character_embedding(args.embedding_path)
+        char_transformer = text.Character(gram_to_ix=token_to_ix)
+        emb_transformer = text.Embedding(weights=embedding_weights)
+        reutersloader.dataset.transform = text.Compose([char_transformer, emb_transformer])
+    elif "c2" in transformer:
+        token_to_ix, embedding_weights = load_character_embedding(args.embedding_path)
+        char_transformer = text.Character2Gram(gram_to_ix=token_to_ix)
+        emb_transformer = text.Embedding(weights=embedding_weights)
+        reutersloader.dataset.transform = text.Compose([char_transformer, emb_transformer])
+    elif "c3" in transformer:
+        token_to_ix, embedding_weights = load_character_embedding(args.embedding_path)
+        char_transformer = text.Character3Gram(gram_to_ix=token_to_ix)
+        emb_transformer = text.Embedding(weights=embedding_weights)
+        reutersloader.dataset.transform = text.Compose([char_transformer, emb_transformer])
     elif "fw" in transformer:
         reutersloader.dataset.transform = text.FunctionWord()
     else:
