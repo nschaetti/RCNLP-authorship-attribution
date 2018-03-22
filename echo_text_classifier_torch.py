@@ -298,6 +298,8 @@ for space in param_space:
                 print(time_labels)
                 print(inputs.size())
                 print(time_labels.size())
+                print(inputs[0, 0])
+                print(time_labels[0, 0])
                 exit()
                 # To variable
                 inputs, time_labels = Variable(inputs), Variable(time_labels)
