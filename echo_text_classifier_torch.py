@@ -62,7 +62,7 @@ def load_character_embedding(emb_path):
     :return:
     """
     token_to_ix, weights = torch.load(open(emb_path, 'rb'))
-    return token_to_ix, weights.data.cpu()
+    return token_to_ix, weights
 # end load_character_embedding
 
 ####################################################
