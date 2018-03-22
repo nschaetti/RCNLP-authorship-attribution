@@ -294,7 +294,11 @@ for space in param_space:
             for i, data in enumerate(reutersloader):
                 # Inputs and labels
                 inputs, labels, time_labels = data
-
+                print(inputs)
+                print(time_labels)
+                print(inputs.size())
+                print(time_labels.size())
+                exit()
                 # To variable
                 inputs, time_labels = Variable(inputs), Variable(time_labels)
                 if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
