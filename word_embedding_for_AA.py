@@ -125,11 +125,7 @@ for k in range(10):
 
             # Zero grad
             model.zero_grad()
-            print(inputs)
-            print(ix_to_token[int(inputs[0, 0])])
-            print(ix_to_token[int(inputs[1, 0])])
-            print(ix_to_token[int(inputs[2, 0])])
-            exit()
+
             # Compute output
             log_probs = model(inputs)
 
