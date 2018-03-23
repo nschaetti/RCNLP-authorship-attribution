@@ -107,7 +107,7 @@ for k in range(10):
             for token in sample_inputs:
                 if token not in token_to_ix:
                     token_to_ix[token] = next_index
-                    ix_to_token[voc_size] = token
+                    ix_to_token[next_index] = token
                     next_index += 1
                 # end if
                 inputs[j, 0] = token_to_ix[token]
