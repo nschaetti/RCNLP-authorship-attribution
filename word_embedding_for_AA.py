@@ -156,7 +156,7 @@ for k in range(10):
             sample_inputs, sample_label = data[0], data[1]
 
             # Inputs
-            inputs = torch.LongTensor(len(sample_inputs))
+            inputs = torch.LongTensor(len(sample_inputs), 1)
 
             # For each token
             j = 0
@@ -166,15 +166,12 @@ for k in range(10):
                     ix_to_token[voc_size] = token
                     next_index += 1
                 # end if
-                inputs[j] = token_to_ix[token]
+                inputs[j, 0] = token_to_ix[token]
                 j += 1
             # end for
 
             # Outputs
             outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
-
-            # Shape
-            inputs = inputs.squeeze(0)
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
