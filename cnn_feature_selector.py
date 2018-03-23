@@ -43,7 +43,8 @@ use_cuda = True
 parser = argparse.ArgumentParser(description="CNN feature extraction")
 
 # Argument
-parser.add_argument("--output", type=str, help="Embedding output file", default='char_embedding.p')
+parser.add_argument("--output", type=str, help="Embedding output file", default='.')
+parser.add_argument("--n-features", type=int, help="Number of features", default=10)
 args = parser.parse_args()
 
 # Word embedding
@@ -62,7 +63,7 @@ loss_function = nn.CrossEntropyLoss()
 for k in range(10):
     # Model
     # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-    model = CNNDeepFeatureSelector(n_authors=n_authors)
+    model = CNNDeepFeatureSelector(n_authors=n_authors, n_features=args.n_features)
     if use_cuda:
         model.cuda()
     # end if
@@ -158,7 +159,7 @@ for k in range(10):
     print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss, success / total * 100.0))
 
     # Save model
-    torch.save(model, open(os.path.join(args.output, u"cnn_feature_extractor." + str(k) + u".p")))
+    torch.save(model, open(os.path.join(args.output, u"cnn_feature_extractor." + str(args.n_features) + u"." + str(k) + u".p")))
 
     # Reset model
     model = None

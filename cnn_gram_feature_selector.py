@@ -41,6 +41,7 @@ embedding_dim = 300
 n_authors = 15
 n_gram = 2
 use_cuda = True
+n_features = 10
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
@@ -65,7 +66,7 @@ loss_function = nn.NLLLoss()
 for k in range(10):
     # Model
     # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-    model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors, n_features=60)
+    model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors, n_features=n_features*n_gram)
     if use_cuda:
         model.cuda()
     # end if
