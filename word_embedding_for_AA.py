@@ -126,6 +126,7 @@ for k in range(10):
             # Zero grad
             model.zero_grad()
             print(inputs)
+            print(inputs[0, 0])
             print(ix_to_token[inputs[0, 0]])
             print(ix_to_token[inputs[1, 0]])
             print(ix_to_token[inputs[2, 0]])
