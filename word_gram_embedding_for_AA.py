@@ -28,11 +28,9 @@ import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
 from echotorch.transforms import text
-from modules import CNNEmbedding, CNNDeepFeatureSelector, CNNFeatureSelector
+from modules import CNNEmbedding2D
 from torch import optim
 import torch.nn as nn
-import echotorch.nn as etnn
-import echotorch.utils
 import os
 import argparse
 
@@ -68,7 +66,7 @@ token_to_ix = dict()
 ix_to_token = dict()
 
 # Model
-model = CNNEmbedding(voc_size=voc_size, embedding_dim=args.dim)
+model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=2)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
