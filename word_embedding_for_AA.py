@@ -203,7 +203,4 @@ for k in range(10):
 
     # Save model
     torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p"), 'wb'))
-    break
 # end for
-
-print(voc_size)
