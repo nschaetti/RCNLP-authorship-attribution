@@ -52,6 +52,9 @@ parser.add_argument("--no-cuda", action='store_true', default=False, help="Enabl
 parser.add_argument("--epoch", type=int, help="Epoch", default=300)
 args = parser.parse_args()
 
+# Use CUDA?
+args.cuda = not args.no_cuda and torch.cuda.is_available()
+
 # Word embedding
 transform = text.Token()
 
