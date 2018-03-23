@@ -33,7 +33,7 @@ class CNNEmbedding2D(nn.Module):
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=out_channels[0], kernel_size=(n_gram, kernel_sizes[0]))
 
         # Max pooling layer
-        self.max_pool = nn.MaxPool2d(kernel_size=(n_gram, max_pool_size), stride=0)
+        self.max_pool = nn.MaxPool1d(kernel_size=max_pool_size, stride=0)
 
         # Conv 2
         self.conv2 = nn.Conv1d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=kernel_sizes[1])
@@ -53,12 +53,17 @@ class CNNEmbedding2D(nn.Module):
         :param x:
         :return:
         """
-        print(x.size())
         # Embedding layer
         embed = self.embedding(x)
 
+        # Channel
+        embed = embed.unsqueeze(1)
+
         # Conv 1
         out_conv1 = F.relu(self.conv1(embed))
+
+        # Unsqueeze
+        out_conv1 = out_conv1.squeeze(2)
 
         # Max pooling
         max_pooled = self.max_pool(out_conv1)

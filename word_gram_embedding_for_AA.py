@@ -37,6 +37,7 @@ import argparse
 
 # Settings
 n_authors = 15
+next_index = 0
 voc_size = 29395
 
 # Argument parser
@@ -66,7 +67,7 @@ token_to_ix = dict()
 ix_to_token = dict()
 
 # Model
-model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=2)
+model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=args.n_gram)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
@@ -104,9 +105,9 @@ for k in range(10):
                 for k in np.arange(args.n_gram-1, -1, -1):
                     token = sample_inputs[j-k]
                     if token not in token_to_ix:
-                        token_to_ix[token] = voc_size
-                        ix_to_token[voc_size] = token
-                        voc_size += 1
+                        token_to_ix[token] = next_index
+                        ix_to_token[next_index] = token
+                        next_index += 1
                     # end if
                     inputs[input_index, gram_index] = token_to_ix[token]
                     gram_index += 1
@@ -153,25 +154,27 @@ for k in range(10):
             sample_inputs, sample_label = data[0], data[1]
 
             # Inputs
-            inputs = torch.LongTensor(len(sample_inputs))
+            inputs = torch.LongTensor(len(sample_inputs) - args.n_gram + 1, args.n_gram)
 
             # For each token
-            j = 0
-            for token in sample_inputs:
-                if token not in token_to_ix:
-                    token_to_ix[token] = voc_size
-                    ix_to_token[voc_size] = token
-                    voc_size += 1
-                # end if
-                inputs[j] = token_to_ix[token]
-                j += 1
+            input_index = 0
+            for j in np.arange(args.n_gram - 1, len(sample_inputs)):
+                gram_index = 0
+                for k in np.arange(args.n_gram - 1, -1, -1):
+                    token = sample_inputs[j - k]
+                    if token not in token_to_ix:
+                        token_to_ix[token] = next_index
+                        ix_to_token[next_index] = token
+                        next_index += 1
+                    # end if
+                    inputs[input_index, gram_index] = token_to_ix[token]
+                    gram_index += 1
+                # end for
+                input_index += 1
             # end for
 
             # Outputs
             outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
-
-            # Shape
-            inputs = inputs.squeeze(0)
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
@@ -181,6 +184,8 @@ for k in range(10):
 
             # Forward
             model_outputs = model(inputs)
+
+            # Compute loss
             loss = loss_function(model_outputs, outputs)
 
             # Take the max as predicted
