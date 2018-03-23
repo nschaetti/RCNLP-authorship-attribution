@@ -73,11 +73,11 @@ if args.cuda:
 # end if
 
 # Optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
 
 # Loss function
-# loss_function = nn.NLLLoss()
-loss_function = nn.CrossEntropyLoss()
+loss_function = nn.NLLLoss()
+# loss_function = nn.CrossEntropyLoss()
 
 # Set fold and training mode
 reutersloader.dataset.set_fold(0)
