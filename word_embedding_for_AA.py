@@ -124,7 +124,7 @@ for k in range(10):
 
             # Zero grad
             model.zero_grad()
-
+            print(outputs.size())
             # Compute output
             log_probs = model(inputs)
 
