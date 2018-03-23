@@ -53,6 +53,7 @@ class CNNEmbedding2D(nn.Module):
         :param x:
         :return:
         """
+        print(x.size())
         # Embedding layer
         embed = self.embedding(x)
 
