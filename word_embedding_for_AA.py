@@ -138,6 +138,7 @@ for k in range(10):
 
             # Add
             training_loss += loss.data[0]
+            print(loss.data[0])
         # end for
 
         # Set test mode
