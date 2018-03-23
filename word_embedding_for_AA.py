@@ -38,6 +38,7 @@ import argparse
 
 # Settings
 n_authors = 15
+next_index = 0
 voc_size = 56790
 
 # Argument parser
@@ -105,9 +106,9 @@ for k in range(10):
             j = 0
             for token in sample_inputs:
                 if token not in token_to_ix:
-                    token_to_ix[token] = voc_size
+                    token_to_ix[token] = next_index
                     ix_to_token[voc_size] = token
-                    voc_size += 1
+                    next_index += 1
                 # end if
                 inputs[j, 0] = token_to_ix[token]
                 j += 1
@@ -158,9 +159,9 @@ for k in range(10):
             j = 0
             for token in sample_inputs:
                 if token not in token_to_ix:
-                    token_to_ix[token] = voc_size
+                    token_to_ix[token] = next_index
                     ix_to_token[voc_size] = token
-                    voc_size += 1
+                    next_index += 1
                 # end if
                 inputs[j] = token_to_ix[token]
                 j += 1
