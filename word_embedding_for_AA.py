@@ -88,7 +88,9 @@ for k in range(10):
     for epoch in range(args.epoch):
         # Total losses
         training_loss = 0.0
+        training_total = 0.0
         test_loss = 0.0
+        test_total = 0.0
 
         # Set training mode
         reutersloader.dataset.set_fold(k)
@@ -138,7 +140,7 @@ for k in range(10):
 
             # Add
             training_loss += loss.data[0]
-            print(loss.data[0])
+            training_total += 1.0
         # end for
 
         # Set test mode
@@ -193,10 +195,12 @@ for k in range(10):
 
             # Add loss
             test_loss += loss.data[0]
+            test_total += 1.0
         # end for
 
         # Print and save loss
-        print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
+        print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss / training_total,
+                                                                              test_loss / test_total,
                                                                               success / total * 100.0))
     # end for
 
