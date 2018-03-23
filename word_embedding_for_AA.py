@@ -38,7 +38,7 @@ import argparse
 
 # Settings
 n_authors = 15
-voc_size = 29395
+voc_size = 56790
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Word embedding for AA")
@@ -114,7 +114,7 @@ for k in range(10):
             # end for
 
             # Outputs
-            """outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
+            outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
@@ -136,7 +136,7 @@ for k in range(10):
             optimizer.step()
 
             # Add
-            training_loss += loss.data[0]"""
+            training_loss += loss.data[0]
         # end for
 
         # Set test mode
@@ -167,7 +167,7 @@ for k in range(10):
             # end for
 
             # Outputs
-            """outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
+            outputs = torch.LongTensor(inputs.size(0)).fill_(sample_label[0])
 
             # Shape
             inputs = inputs.squeeze(0)
@@ -190,16 +190,16 @@ for k in range(10):
             total += predicted.size(0)
 
             # Add loss
-            test_loss += loss.data[0]"""
+            test_loss += loss.data[0]
         # end for
 
         # Print and save loss
-        # print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
-        #                                                                       success / total * 100.0))
+        print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
+                                                                              success / total * 100.0))
     # end for
 
     # Save model
-    # torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p")))
+    torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p")))
     break
 # end for
 
