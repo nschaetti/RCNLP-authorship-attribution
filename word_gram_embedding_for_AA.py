@@ -50,6 +50,7 @@ parser.add_argument("--n-features", type=int, help="Number of features", default
 parser.add_argument("--n-gram", type=int, help="N-grams", default=2)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 parser.add_argument("--epoch", type=int, help="Epoch", default=300)
+parser.add_argument("--steps", type=int, help="Steps to backwards", default=5)
 args = parser.parse_args()
 
 # Use CUDA?
@@ -89,12 +90,15 @@ for k in range(10):
     for epoch in range(args.epoch):
         # Total losses
         training_loss = 0.0
+        training_total = 0.0
         test_loss = 0.0
+        test_total = 0.0
 
         # Set training mode
         reutersloader.dataset.set_train(True)
 
         # Get test data for this fold
+        step = 0
         for i, data in enumerate(reutersloader):
             # Inputs and labels
             sample_inputs, sample_label = data[0], data[1]
@@ -129,20 +133,36 @@ for k in range(10):
             # end if
 
             # Zero grad
-            model.zero_grad()
+            if step == 0:
+                model.zero_grad()
+            # end if
 
             # Compute output
             log_probs = model(inputs)
 
             # Loss
-            loss = loss_function(log_probs, outputs)
+            if step == 0:
+                loss = loss_function(log_probs, outputs)
+            else:
+                loss += loss_function(log_probs, outputs)
+            # end if
 
             # Backward and step
-            loss.backward()
-            optimizer.step()
+            if step == args.steps - 1:
+                loss.backward()
+                optimizer.step()
 
-            # Add
-            training_loss += loss.data[0]
+                # Add
+                # print(u"Training loss {}".format(loss.data[0]))
+                training_loss += loss.data[0]
+                training_total += 1.0
+            # end if
+
+            # Step
+            step += 1
+            if step == args.steps:
+                step = 0
+            # end if
         # end for
 
         # Set test mode
@@ -204,10 +224,10 @@ for k in range(10):
         # end for
 
         # Print and save loss
-        print(
-            u"Fold {}, Epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss,
-                                                                                     success / total * 100.0)
-        )
+        print(u"Fold {}, Epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch,
+                                                                                       training_loss / training_total,
+                                                                                       test_loss / test_total,
+                                                                                       success / total * 100.0))
     # end for
 
     # Show last result
@@ -219,4 +239,9 @@ for k in range(10):
         (token_to_ix, model.embedding.weight),
         open(os.path.join(args.output, u"word_" + str(args.n_gram) + u"_embedding_AA." + str(k) + u".p"))
     )
+
+    # Reset model
+    model = None
 # end for
+
+print(u"10-Fold CV average success rate : {}".format(np.average(success_rates)))
