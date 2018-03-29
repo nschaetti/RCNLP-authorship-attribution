@@ -38,7 +38,7 @@ import argparse
 # Settings
 n_authors = 15
 next_index = 0
-voc_size = 29395
+voc_size = 56790
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Word embedding for AA")
@@ -78,6 +78,9 @@ loss_function = nn.CrossEntropyLoss()
 
 # Set fold and training mode
 reutersloader.dataset.set_fold(0)
+
+# Success rates
+success_rates = np.zeros(10)
 
 # For each fold
 for k in range(10):
@@ -200,10 +203,19 @@ for k in range(10):
         # end for
 
         # Print and save loss
-        print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss, test_loss,
-                                                                              success / total * 100.0))
+        print(
+            u"Fold {}, Epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss,
+                                                                                     success / total * 100.0)
+        )
     # end for
 
+    # Show last result
+    success_rates[k] = success / total * 100.0
+    print(u"Fold {}, test accuracy {}".format(k, success_rates[k]))
+
     # Save model
-    torch.save((model, token_to_ix), open(os.path.join(args.output, u"word_gram_embedding_AA." + str(k) + u".p")))
+    torch.save(
+        (model, token_to_ix),
+        open(os.path.join(args.output, u"word_" + str(args.n_gram) + u"_embedding_AA." + str(k) + u".p"))
+    )
 # end for
