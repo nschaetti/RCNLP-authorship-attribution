@@ -142,6 +142,7 @@ for k in range(10):
             optimizer.step()
 
             # Add
+            # print(u"Training loss {}".format(loss.data[0]))
             training_loss += loss.data[0]
             training_total += 1.0
         # end for
@@ -194,6 +195,7 @@ for k in range(10):
             total += predicted.size(0)
 
             # Add loss
+            # print(u"Test loss {}".format(loss.data[0]))
             test_loss += loss.data[0]
             test_total += 1.0
         # end for
@@ -209,7 +211,7 @@ for k in range(10):
     print(u"Fold {}, test accuracy {}".format(k, success_rates[k]))
 
     # Save model
-    torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p"), 'wb'))
+    torch.save((token_to_ix, model.embedding.weight), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p"), 'wb'))
 
     # Reset model
     model = None
