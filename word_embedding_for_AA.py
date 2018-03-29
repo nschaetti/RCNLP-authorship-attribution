@@ -66,15 +66,6 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 token_to_ix = dict()
 ix_to_token = dict()
 
-# Model
-model = CNNEmbedding(voc_size=voc_size, embedding_dim=args.dim)
-if args.cuda:
-    model.cuda()
-# end if
-
-# Optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
-
 # Loss function
 loss_function = nn.NLLLoss()
 # loss_function = nn.CrossEntropyLoss()
@@ -87,6 +78,15 @@ success_rates = np.zeros(10)
 
 # For each fold
 for k in range(10):
+    # Model
+    model = CNNEmbedding(voc_size=voc_size, embedding_dim=args.dim)
+    if args.cuda:
+        model.cuda()
+    # end if
+
+    # Optimizer
+    optimizer = optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+
     # Epoch
     for epoch in range(args.epoch):
         # Total losses
@@ -210,6 +210,9 @@ for k in range(10):
 
     # Save model
     torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p"), 'wb'))
+
+    # Reset model
+    model = None
 # end for
 
 print(u"10-Fold CV average success rate : {}".format(np.average(success_rates)))
