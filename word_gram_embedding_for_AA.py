@@ -215,7 +215,7 @@ for k in range(10):
 
     # Save model
     torch.save(
-        (model, token_to_ix),
+        (token_to_ix, model.embedding.weight),
         open(os.path.join(args.output, u"word_" + str(args.n_gram) + u"_embedding_AA." + str(k) + u".p"))
     )
 # end for
