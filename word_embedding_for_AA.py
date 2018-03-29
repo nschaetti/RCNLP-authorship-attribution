@@ -47,6 +47,7 @@ parser = argparse.ArgumentParser(description="Word embedding for AA")
 # Argument
 parser.add_argument("--output", type=str, help="Embedding output file", default='.')
 parser.add_argument("--dim", type=int, help="Embedding dimension", default=300)
+parser.add_argument("--n-features", type=int, help="Number of features", default=30)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 parser.add_argument("--epoch", type=int, help="Epoch", default=300)
 args = parser.parse_args()
@@ -79,7 +80,7 @@ success_rates = np.zeros(10)
 # For each fold
 for k in range(10):
     # Model
-    model = CNNEmbedding(voc_size=voc_size, embedding_dim=args.dim)
+    model = CNNEmbedding(voc_size=voc_size, embedding_dim=args.dim, n_features=args.n_features)
     if args.cuda:
         model.cuda()
     # end if
