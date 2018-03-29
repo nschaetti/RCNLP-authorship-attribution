@@ -46,6 +46,7 @@ parser = argparse.ArgumentParser(description="Word embedding for AA")
 # Argument
 parser.add_argument("--output", type=str, help="Embedding output file", default='.')
 parser.add_argument("--dim", type=int, help="Embedding dimension", default=300)
+parser.add_argument("--n-features", type=int, help="Number of features", default=30)
 parser.add_argument("--n-gram", type=int, help="N-grams", default=2)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 parser.add_argument("--epoch", type=int, help="Epoch", default=300)
@@ -67,7 +68,7 @@ token_to_ix = dict()
 ix_to_token = dict()
 
 # Model
-model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=args.n_gram)
+model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=args.n_gram, n_features=args.n_features)
 
 # Optimizer
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
