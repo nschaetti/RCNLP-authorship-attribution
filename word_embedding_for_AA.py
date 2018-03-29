@@ -211,3 +211,5 @@ for k in range(10):
     # Save model
     torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p"), 'wb'))
 # end for
+
+print(u"10-Fold CV average success rate : {}".format(np.average(success_rates)))
