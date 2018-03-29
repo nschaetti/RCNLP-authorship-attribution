@@ -82,6 +82,9 @@ loss_function = nn.NLLLoss()
 # Set fold and training mode
 reutersloader.dataset.set_fold(0)
 
+# Success rates
+success_rates = np.zeros(10)
+
 # For each fold
 for k in range(10):
     # Epoch
@@ -196,10 +199,14 @@ for k in range(10):
         # end for
 
         # Print and save loss
-        print(u"Epoch {}, training loss {}, test loss {}, accuracy {}".format(epoch, training_loss / training_total,
+        print(u"Fold {}, Epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss / training_total,
                                                                               test_loss / test_total,
                                                                               success / total * 100.0))
     # end for
+
+    # Show last result
+    success_rates[k] = success / total * 100.0
+    print(u"Fold {}, test accuracy {}".format(k, success_rates[k]))
 
     # Save model
     torch.save((token_to_ix, model), open(os.path.join(args.output, u"word_embedding_AA." + str(k) + u".p"), 'wb'))
