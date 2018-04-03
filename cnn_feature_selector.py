@@ -34,10 +34,10 @@ from torch import optim
 import torch.nn as nn
 
 # Settings
-n_epoch = 500
+n_epoch = 600
 embedding_dim = 300
 n_authors = 15
-use_cuda = True
+use_cuda = False
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
@@ -153,13 +153,14 @@ for k in range(10):
             # Add loss
             test_loss += loss.data[0]
         # end for
+
+        # Print and save loss
+        print(u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss,
+                                                                             success / total * 100.0))
     # end for
 
-    # Print and save loss
-    print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss, success / total * 100.0))
-
     # Save model
-    torch.save(model, open(os.path.join(args.output, u"cnn_feature_extractor." + str(args.n_features) + u"." + str(k) + u".p")))
+    torch.save(model, open(os.path.join(args.output, u"cnn_feature_extractor." + str(args.n_features) + u"." + str(k) + u".p"), 'wb'))
 
     # Reset model
     model = None
