@@ -35,10 +35,11 @@ class CNNEmbedding(nn.Module):
         self.max_pool = nn.MaxPool1d(kernel_size=max_pool_size, stride=0)
 
         # Conv 2
-        self.conv2 = nn.Conv1d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=kernel_sizes[1])
+        # self.conv2 = nn.Conv1d(in_channels=out_channels[0], out_channels=out_channels[1], kernel_size=kernel_sizes[1])
 
         # Linear layer 1
-        self.linear_size = out_channels[1] * 72
+        # self.linear_size = out_channels[1] * 72
+        self.linear_size = out_channels[0] * 148
         self.linear = nn.Linear(self.linear_size, n_features)
 
         # Linear layer 2
@@ -62,10 +63,10 @@ class CNNEmbedding(nn.Module):
         max_pooled = self.max_pool(out_conv1)
 
         # Conv 2
-        out_conv2 = F.relu(self.conv2(max_pooled))
+        # out_conv2 = F.relu(self.conv2(max_pooled))
 
         # Max pooling
-        max_pooled = self.max_pool(out_conv2)
+        # max_pooled = self.max_pool(out_conv2)
 
         # Flatten
         out = max_pooled.view(-1, self.linear_size)
