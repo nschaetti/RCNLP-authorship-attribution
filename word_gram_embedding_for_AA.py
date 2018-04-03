@@ -68,12 +68,6 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 token_to_ix = dict()
 ix_to_token = dict()
 
-# Model
-model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=args.n_gram, n_features=args.n_features)
-
-# Optimizer
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
 # Loss function
 # loss_function = nn.NLLLoss()
 loss_function = nn.CrossEntropyLoss()
@@ -85,7 +79,16 @@ reutersloader.dataset.set_fold(0)
 success_rates = np.zeros(10)
 
 # For each fold
-for k in range(10):
+for fl in range(10):
+    # Model
+    model = CNNEmbedding2D(voc_size=voc_size, embedding_dim=args.dim, n_gram=args.n_gram, n_features=args.n_features)
+    if args.cuda:
+        model.cuda()
+    # end if
+
+    # Optimizer
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
     # Epoch
     for epoch in range(args.epoch):
         # Total losses
@@ -221,23 +224,25 @@ for k in range(10):
 
             # Add loss
             test_loss += loss.data[0]
+            test_total += 1.0
+            # print(u"Test loss {}".format(loss.data[0]))
         # end for
 
         # Print and save loss
-        print(u"Fold {}, Epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch,
+        print(u"Fold {}, Epoch {}, training loss {}, test loss {}, accuracy {}".format(fl, epoch,
                                                                                        training_loss / training_total,
                                                                                        test_loss / test_total,
                                                                                        success / total * 100.0))
     # end for
 
     # Show last result
-    success_rates[k] = success / total * 100.0
-    print(u"Fold {}, test accuracy {}".format(k, success_rates[k]))
+    success_rates[fl] = success / total * 100.0
+    print(u"Fold {}, test accuracy {}".format(fl, success_rates[k]))
 
     # Save model
     torch.save(
         (token_to_ix, model.embedding.weight),
-        open(os.path.join(args.output, u"word_" + str(args.n_gram) + u"_embedding_AA." + str(k) + u".p"))
+        open(os.path.join(args.output, u"word_" + str(args.n_gram) + u"_embedding_AA." + str(fl) + u".p"), 'wb')
     )
 
     # Reset model
