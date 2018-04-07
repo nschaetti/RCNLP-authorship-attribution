@@ -32,6 +32,7 @@ from echotorch.transforms import text
 from modules import CNNDeepFeatureSelector
 from torch import optim
 import torch.nn as nn
+import numpy as np
 
 # Settings
 n_epoch = 600
@@ -66,7 +67,7 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 loss_function = nn.CrossEntropyLoss()
 
 # 10-CV
-for k in range(10):
+for k in np.arange(args.fold, 10):
     # Model
     # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
     model = CNNDeepFeatureSelector(n_authors=n_authors, n_features=args.n_features)
