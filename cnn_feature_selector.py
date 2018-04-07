@@ -37,7 +37,7 @@ import torch.nn as nn
 n_epoch = 600
 embedding_dim = 300
 n_authors = 15
-use_cuda = False
+use_cuda = True
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
@@ -45,7 +45,13 @@ parser = argparse.ArgumentParser(description="CNN feature extraction")
 # Argument
 parser.add_argument("--output", type=str, help="Embedding output file", default='.')
 parser.add_argument("--n-features", type=int, help="Number of features", default=10)
+parser.add_argument("--fold", type=int, help="Starting fold", default=0)
+parser.add_argument("--steps", type=int, help="Steps", default=1)
+parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 args = parser.parse_args()
+
+# Use CUDA?
+args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -64,7 +70,7 @@ for k in range(10):
     # Model
     # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
     model = CNNDeepFeatureSelector(n_authors=n_authors, n_features=args.n_features)
-    if use_cuda:
+    if args.cuda:
         model.cuda()
     # end if
 
@@ -82,6 +88,7 @@ for k in range(10):
         reutersloader.dataset.set_train(True)
 
         # Get test data for this fold
+        step = 0
         for i, data in enumerate(reutersloader):
             # Inputs and labels
             inputs, labels, time_labels = data
@@ -94,25 +101,39 @@ for k in range(10):
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
-            if use_cuda:
+            if args.cuda:
                 inputs, outputs = inputs.cuda(), outputs.cuda()
             # end if
 
             # Zero grad
-            model.zero_grad()
+            if step == 0:
+                model.zero_grad()
+            # end if
 
             # Compute output
             log_probs = model(inputs)
 
             # Loss
-            loss = loss_function(log_probs, outputs)
+            if step == 0:
+                loss = loss_function(log_probs, outputs)
+            else:
+                loss += loss_function(log_probs, outputs)
+            # end if
 
             # Backward and step
-            loss.backward()
-            optimizer.step()
+            if step == args.steps - 1:
+                loss.backward()
+                optimizer.step()
 
-            # Add
-            training_loss += loss.data[0]
+                # Add
+                training_loss += loss.data[0]
+            # end if
+
+            # Step
+            step += 1
+            if step == args.steps:
+                step = 0
+            # end if
         # end for
 
         # Set test mode
@@ -135,7 +156,7 @@ for k in range(10):
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
-            if use_cuda:
+            if args.cuda:
                 inputs, outputs = inputs.cuda(), outputs.cuda()
             # end if
 
