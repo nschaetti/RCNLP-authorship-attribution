@@ -36,19 +36,24 @@ import torch.nn as nn
 
 
 # Settings
-n_epoch = 500
+n_epoch = 600
 embedding_dim = 300
 n_authors = 15
-n_gram = 2
 use_cuda = True
-n_features = 10
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
 
 # Argument
-parser.add_argument("--output", type=str, help="Embedding output file", default='char_embedding.p')
+parser.add_argument("--output", type=str, help="Embedding output file", default='.')
+parser.add_argument("--n-features", type=int, help="Number of features", default=30)
+parser.add_argument("--fold", type=int, help="Starting fold", default=0)
+parser.add_argument("--n-gram", type=int, help="N-gram", default=2)
+parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 args = parser.parse_args()
+
+# Use CUDA?
+args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 # Word embedding
 transform = text.GloveVector(model='en_vectors_web_lg')
@@ -63,13 +68,16 @@ loss_function = nn.NLLLoss()
 # loss_function = nn.CrossEntropyLoss()
 
 # 10-CV
-for k in range(10):
+for k in np.arange(args.fold, 10):
     # Model
-    # model = CNNFeatureSelector(embedding_dim=embedding_dim, n_authors=n_authors)
-    model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors, n_features=n_features*n_gram)
-    if use_cuda:
+    model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors, n_features=args.n_features)
+    if args.cuda:
         model.cuda()
     # end if
+    
+    # Best model
+    best_model = model.state_dict()
+    best_acc = 0.0
 
     # Optimizer
     optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0.9)
@@ -90,9 +98,9 @@ for k in range(10):
             sample_inputs, labels, time_labels = data
 
             # Create inputs
-            inputs = torch.zeros(sample_inputs.size(1)-n_gram+1, 1, n_gram, embedding_dim)
-            for i in np.arange(n_gram, sample_inputs.size(1)+1):
-                inputs[i-n_gram, 0] = sample_inputs[0, i-n_gram:i]
+            inputs = torch.zeros(sample_inputs.size(1)-args.n_gram+1, 1, args.n_gram, embedding_dim)
+            for i in np.arange(args.n_gram, sample_inputs.size(1)+1):
+                inputs[i-args.n_gram, 0] = sample_inputs[0, i-args.n_gram:i]
             # end for
 
             # Outputs
@@ -100,7 +108,7 @@ for k in range(10):
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
-            if use_cuda:
+            if args.cuda:
                 inputs, outputs = inputs.cuda(), outputs.cuda()
             # end if
 
@@ -134,9 +142,9 @@ for k in range(10):
             sample_inputs, labels, time_labels = data
 
             # Create inputs
-            inputs = torch.zeros(sample_inputs.size(1) - n_gram + 1, 1, n_gram, embedding_dim)
-            for i in np.arange(n_gram, sample_inputs.size(1)+1):
-                inputs[i - n_gram, 0] = sample_inputs[0, i - n_gram:i]
+            inputs = torch.zeros(sample_inputs.size(1) - args.n_gram + 1, 1, args.n_gram, embedding_dim)
+            for i in np.arange(args.n_gram, sample_inputs.size(1)+1):
+                inputs[i - args.n_gram, 0] = sample_inputs[0, i - args.n_gram:i]
             # end for
 
             # Outputs
@@ -144,7 +152,7 @@ for k in range(10):
 
             # To variable
             inputs, outputs = Variable(inputs), Variable(outputs)
-            if use_cuda:
+            if args.cuda:
                 inputs, outputs = inputs.cuda(), outputs.cuda()
             # end if
 
@@ -162,12 +170,22 @@ for k in range(10):
             # Add loss
             test_loss += loss.data[0]
         # end for
+
+        # Accuracy
+        accuracy = success / total * 100.0
+
+        # Save if best
+        if accuracy > best_acc:
+            best_acc = accuracy
+            best_model = model.state_dict()
+        # end if
+
+        # Print and save loss
+        print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss, accuracy))
     # end for
 
-    # Print and save loss
-    print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss, success / total * 100.0))
-
     # Save model
+    model = model.load_state_dict(best_model)
     torch.save(model, open(os.path.join(args.output, u"cnn_" + str(n_gram) + u"gram_feature_extractor." + str(k) + u".p")))
 
     # Reset model
