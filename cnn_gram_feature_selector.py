@@ -36,7 +36,7 @@ import torch.nn as nn
 
 
 # Settings
-n_epoch = 600
+n_epoch = 1000
 embedding_dim = 300
 n_authors = 15
 use_cuda = True
@@ -187,7 +187,7 @@ for k in np.arange(args.fold, 10):
     # Save model
     print(u"Saving model with best accuracy {}".format(best_acc))
     model = model.load_state_dict(best_model)
-    torch.save(model, open(os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p")))
+    torch.save(model, open(os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p"), 'wb'))
 
     # Reset model
     model = None
