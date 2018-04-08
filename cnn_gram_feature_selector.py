@@ -181,12 +181,13 @@ for k in np.arange(args.fold, 10):
         # end if
 
         # Print and save loss
-        print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss, accuracy))
+        print(u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss, accuracy))
     # end for
 
     # Save model
+    print(u"Saving model with best accuracy {}".format(best_acc))
     model = model.load_state_dict(best_model)
-    torch.save(model, open(os.path.join(args.output, u"cnn_" + str(n_gram) + u"gram_feature_extractor." + str(k) + u".p")))
+    torch.save(model, open(os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p")))
 
     # Reset model
     model = None
