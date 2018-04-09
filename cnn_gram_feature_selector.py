@@ -70,7 +70,7 @@ loss_function = nn.NLLLoss()
 # 10-CV
 for k in np.arange(args.fold, 10):
     # Model
-    model = CNN2DDeepFeatureSelector(n_gram=2, n_authors=n_authors, n_features=args.n_features)
+    model = CNN2DDeepFeatureSelector(n_gram=args.n_gram, n_authors=n_authors, n_features=args.n_features)
     if args.cuda:
         model.cuda()
     # end if
