@@ -64,6 +64,9 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 # Loss function
 loss_function = nn.MSELoss()
 
+# Average accuracy
+average_accuracy = np.zeros(10)
+
 # 10-CV
 for k in np.arange(args.fold, 10):
     # Model
@@ -71,10 +74,6 @@ for k in np.arange(args.fold, 10):
     if args.cuda:
         model.cuda()
     # end if
-
-    # Total losses
-    training_loss = 0.0
-    test_loss = 0.0
 
     # Set fold and training mode
     reutersloader.dataset.set_fold(k)
@@ -85,9 +84,6 @@ for k in np.arange(args.fold, 10):
     for i, data in enumerate(reutersloader):
         # Inputs and labels
         sample_inputs, labels, time_labels = data
-
-        # Remove useless dim
-        time_labels = time_labels.squeeze(0)
 
         # Create inputs
         inputs = torch.zeros(sample_inputs.size(1) - args.n_gram + 1, 1, args.n_gram, embedding_dim)
@@ -100,7 +96,7 @@ for k in np.arange(args.fold, 10):
 
         # Batch dimension
         inputs = inputs.unsqueeze(0)
-        time_labels = time_labels.unsqueeze(0)
+        time_labels = time_labels[:, :inputs.size(1)]
 
         # To variable
         inputs, time_labels = Variable(inputs), Variable(time_labels)
@@ -125,20 +121,22 @@ for k in np.arange(args.fold, 10):
     # For each test sample
     for i, data in enumerate(reutersloader):
         # Inputs and labels
-        inputs, labels, time_labels = data
+        sample_inputs, labels, time_labels = data
 
-        # Remove useless dim
-        time_labels = time_labels.squeeze(0)
-
-        # Outputs
-        outputs = torch.LongTensor(inputs.size(1)).fill_(labels[0])
+        # Create inputs
+        inputs = torch.zeros(sample_inputs.size(1) - args.n_gram + 1, 1, args.n_gram, embedding_dim)
+        for i in np.arange(args.n_gram, sample_inputs.size(1) + 1):
+            inputs[i - args.n_gram, 0] = sample_inputs[0, i - args.n_gram:i]
+        # end for
 
         # Channel
-        inputs = inputs.view((-1, embedding_dim))
+        inputs = inputs.view((-1, args.n_gram * embedding_dim))
 
         # Batch dimension
         inputs = inputs.unsqueeze(0)
-        time_labels = time_labels.unsqueeze(0)
+
+        # Outputs
+        outputs = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
 
         # To variable
         inputs, time_labels = Variable(inputs), Variable(time_labels)
@@ -150,17 +148,21 @@ for k in np.arange(args.fold, 10):
         model_outputs = model(inputs)
 
         # Take the max as predicted
-        _, predicted = torch.max(model_outputs.data, 1)
+        _, predicted = torch.max(model_outputs.data, 2)
 
         # Add to correctly classified word
         success += (predicted == outputs).sum()
-        total += predicted.size(0)
+        total += predicted.size(1)
     # end for
 
     # Print and save loss
-    print(u"Fold {}, training loss {}, test loss {}, accuracy {}".format(k, training_loss, test_loss,
-                                                                         success / total * 100.0))
-
+    print(u"Fold {}, accuracy {}".format(k, success / total * 100.0))
+    
+    # Save accuracy
+    average_accuracy[k] = success / total * 100.0
+    
     # Reset model
     model = None
 # end for
+
+print(u"10-fold cross validation : {}".format(np.average(average_accuracy)))
