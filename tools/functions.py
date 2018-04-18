@@ -32,3 +32,13 @@ def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
     return tokenizer
 # end create_tokenizer
 
+
+# Create transformer from description
+def create_transformers(desc):
+    """
+    Create transformer from description
+    :param desc:
+    :return:
+    """
+    pass
+# end create_transformer
