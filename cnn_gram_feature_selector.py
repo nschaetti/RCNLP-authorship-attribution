@@ -33,10 +33,11 @@ from echotorch.transforms import text
 from modules import CNN2DDeepFeatureSelector
 from torch import optim
 import torch.nn as nn
+import torchlanguage.models
 
 
 # Settings
-n_epoch = 1000
+n_epoch = 1200
 embedding_dim = 300
 n_authors = 15
 use_cuda = True
@@ -65,18 +66,16 @@ reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=
 
 # Loss function
 loss_function = nn.NLLLoss()
-# loss_function = nn.CrossEntropyLoss()
 
 # 10-CV
 for k in np.arange(args.fold, 10):
     # Model
-    model = CNN2DDeepFeatureSelector(n_gram=args.n_gram, n_authors=n_authors, n_features=args.n_features)
+    model = torchlanguage.models.CGFS(n_gram=args.n_gram, n_authors=n_authors, n_features=args.n_features)
     if args.cuda:
         model.cuda()
     # end if
     
     # Best model
-    best_model = model.state_dict()
     best_acc = 0.0
 
     # Optimizer
@@ -174,20 +173,19 @@ for k in np.arange(args.fold, 10):
         # Accuracy
         accuracy = success / total * 100.0
 
+        # Print and save loss
+        print(u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss, accuracy))
+
         # Save if best
         if accuracy > best_acc:
             best_acc = accuracy
-            best_model = model.state_dict()
+            # Save model
+            print(u"Saving model with best accuracy {}".format(best_acc))
+            torch.save(model.state_dict(), open(
+                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p"),
+                'wb'))
         # end if
-
-        # Print and save loss
-        print(u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss, accuracy))
     # end for
-
-    # Save model
-    print(u"Saving model with best accuracy {}".format(best_acc))
-    model = model.load_state_dict(best_model)
-    torch.save(model, open(os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p"), 'wb'))
 
     # Reset model
     model = None
