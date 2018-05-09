@@ -28,14 +28,14 @@ import os
 import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
-from echotorch import datasets
+from torchlanguage import datasets
 from torch import optim
 import torch.nn as nn
 import torchlanguage.models
 from torchlanguage import transforms
 
 # Settings
-n_epoch = 1200
+n_epoch = 500
 embedding_dim = 300
 n_authors = 15
 use_cuda = True
@@ -48,6 +48,7 @@ parser.add_argument("--output", type=str, help="Embedding output file", default=
 parser.add_argument("--n-gram", type=str, help="N-gram (c1, c2)", default='c1')
 parser.add_argument("--fold", type=int, help="Starting fold", default=0)
 parser.add_argument("--text-length", type=int, help="Text length", default=20)
+parser.add_argument("--batch-size", type=int, help="Batch-size", default=64)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 args = parser.parse_args()
 
@@ -58,29 +59,33 @@ args.cuda = not args.no_cuda and torch.cuda.is_available()
 if args.n_gram == 'c1':
     transform = transforms.Compose([
         transforms.Character(),
-        transforms.ToIndex(),
-        transforms.ToNGram(n=args.text_length, overlapse=True)
+        transforms.ToIndex(start_ix=0),
+        transforms.ToNGram(n=args.text_length, overlapse=True),
+        transforms.Reshape((-1, args.text_length))
     ])
 else:
     transform = transforms.Compose([
         transforms.Character2Gram(),
-        transforms.ToIndex(),
-        transforms.ToNGram(n=args.text_length, overlapse=True)
+        transforms.ToIndex(start_ix=0),
+        transforms.ToNGram(n=args.text_length, overlapse=True),
+        transforms.Reshape((-1, args.text_length))
     ])
 # end if
 
+# Dataset
+dataset = datasets.ReutersC50Dataset(download=True, n_authors=15, transform=transform)
+
 # Reuters C50 dataset
-reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=True, n_authors=15,
-                                                                       transform=transform),
-                                            batch_size=1, shuffle=False)
+dataloader_train = torch.utils.data.DataLoader(torchlanguage.utils.CrossValidation(dataset), batch_size=1, shuffle=True)
+dataloader_valid = torch.utils.data.DataLoader(torchlanguage.utils.CrossValidation(dataset, train=False), batch_size=1, shuffle=True)
 
 # Loss function
-loss_function = nn.NLLLoss()
+loss_function = nn.CrossEntropyLoss()
 
 # 10-CV
 for k in np.arange(args.fold, 10):
     # Model
-    model = torchlanguage.models.CCSAA(text_length=args.text_length, vocab_size=2000)
+    model = torchlanguage.models.CCSAA(text_length=args.text_length, vocab_size=84, embedding_dim=50, n_classes=15)
     if args.cuda:
         model.cuda()
     # end if
@@ -89,7 +94,7 @@ for k in np.arange(args.fold, 10):
     best_acc = 0.0
 
     # Optimizer
-    optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     # Epoch
     for epoch in range(n_epoch):
@@ -97,14 +102,13 @@ for k in np.arange(args.fold, 10):
         training_loss = 0.0
         test_loss = 0.0
 
-        # Set fold and training mode
-        reutersloader.dataset.set_fold(k)
-        reutersloader.dataset.set_train(True)
-
         # Get test data for this fold
-        for i, data in enumerate(reutersloader):
+        for i, data in enumerate(dataloader_train):
             # Inputs and labels
             inputs, labels, time_labels = data
+
+            # Reshape
+            inputs = inputs.view(-1, args.text_length)
 
             # Outputs
             outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
@@ -132,17 +136,17 @@ for k in np.arange(args.fold, 10):
             training_loss += loss.data[0]
         # end for
 
-        # Set test mode
-        reutersloader.dataset.set_train(False)
-
         # Counters
         total = 0.0
         success = 0.0
 
         # For each test sample
-        for i, data in enumerate(reutersloader):
+        for i, data in enumerate(dataloader_valid):
             # Inputs and labels
             inputs, labels, time_labels = data
+
+            # Reshape
+            inputs = inputs.view(-1, args.text_length)
 
             # Outputs
             outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
@@ -182,7 +186,10 @@ for k in np.arange(args.fold, 10):
             # Save model
             print(u"Saving model with best accuracy {}".format(best_acc))
             torch.save(model.state_dict(), open(
-                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p"),
+                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"character_extractor." + str(k) + u".pth"),
+                'wb'))
+            torch.save(transform.transforms[1].token_to_ix, open(
+                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"character_extractor." + str(k) + u".voc.pth"),
                 'wb'))
         # end if
     # end for
