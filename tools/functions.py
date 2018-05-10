@@ -3,42 +3,76 @@
 #
 
 # Imports
-import nsNLP
-import sys
+import echotorch.nn as etnn
 
 
-# Create tokenizer
-def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
+#########################################
+# Other
+#########################################
+
+
+# Manage W
+def manage_w(xp, args, keep_w):
     """
-    Create tokenizer
-    :param tokenizer_type: Tokenizer
+    Manage W
+    :param xp:
+    :param args:
+    :param keep_w:
     :return:
     """
-    # Tokenizer
-    if tokenizer_type == "nltk":
-        tokenizer = nsNLP.tokenization.NLTKTokenizer()
-    elif tokenizer_type == "nltk-twitter":
-        tokenizer = nsNLP.tokenization.NLTKTweetTokenizer()
-    elif tokenizer_type == "spacy":
-        tokenizer = nsNLP.tokenization.SpacyTokenizer(lang=lang)
-    elif tokenizer_type == "spacy_wv":
-        tokenizer = nsNLP.tokenization.SpacyTokenizer(lang=lang, original=True)
-    else:
-        sys.stderr.write(u"Unknown tokenizer type!\n")
-        exit()
+    # First params
+    rc_size = int(args.get_space()['reservoir_size'][0])
+    rc_w_sparsity = args.get_space()['w_sparsity'][0]
+
+    # Create W matrix
+    w = etnn.ESNCell.generate_w(rc_size, rc_w_sparsity)
+
+    # Save classifier
+    if keep_w:
+        xp.save_object(u"w", w)
     # end if
 
-    # Return tokenizer object
-    return tokenizer
-# end create_tokenizer
+    return w
+# end manage_w
 
 
-# Create transformer from description
-def create_transformers(desc):
+# Get params
+def get_params(space):
     """
-    Create transformer from description
-    :param desc:
+    Get params
+    :param space:
     :return:
     """
-    pass
-# end create_transformer
+    # Params
+    reservoir_size = int(space['reservoir_size'])
+    w_sparsity = space['w_sparsity']
+    leak_rate = space['leak_rate']
+    input_scaling = space['input_scaling']
+    input_sparsity = space['input_sparsity']
+    spectral_radius = space['spectral_radius']
+    feature = space['transformer'][0][0]
+    aggregation = space['aggregation'][0][0]
+    state_gram = space['state_gram']
+    feedbacks_sparsity = space['feedbacks_sparsity']
+    lang = space['lang'][0][0]
+    embedding = space['embedding'][0][0]
+    return reservoir_size, w_sparsity, leak_rate, input_scaling, input_sparsity, spectral_radius, feature, aggregation, \
+           state_gram, feedbacks_sparsity, lang, embedding
+# end get_params
+
+
+# Converter in
+def converter_in(converters_desc, converter):
+    """
+    Is the converter in the desc
+    :param converters_desc:
+    :param converter:
+    :return:
+    """
+    for converter_desc in converters_desc:
+        if converter in converter_desc:
+            return True
+        # end if
+    # end for
+    return False
+# end converter_in
