@@ -35,7 +35,7 @@ import torchlanguage.models
 from torchlanguage import transforms
 
 # Settings
-n_epoch = 500
+n_epoch = 150
 embedding_dim = 300
 n_authors = 15
 use_cuda = True
