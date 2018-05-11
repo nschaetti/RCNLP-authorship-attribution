@@ -53,7 +53,7 @@ model_types = ['linear', 'cgfs', 'ccsaa']
 # Model subtype
 model_subtypes = {
     'linear': {1: 300, 2: 600, 3: 900},
-    'cgfs': {'c1': 30, 'c2': 60, 'c3': 90},
+    'cgfs': {'c2': 60},
     'ccsaa': {'c1': 150}
 }
 
@@ -69,7 +69,7 @@ global_average_accuracy = create_accuracy_table(model_types)
 
 # For each model
 for model_type in model_types:
-    for model_subtype in model_subtypes:
+    for model_subtype in model_subtypes[model_type]:
         # Log model type
         print(u"Model type {}, subtype {}".format(model_type, model_subtype))
 
@@ -79,20 +79,21 @@ for model_type in model_types:
         # Input dim
         input_dim = model_subtypes[model_type][model_subtype]
 
-        # Load transformer
-        if model_type == 'linear':
-            reutersc50_dataset.transform = torchlanguage.transforms.Compose([
-                torchlanguage.transforms.GloveVector(model='en_vectors_web_lg'),
-                torchlanguage.transforms.ToNGram(n=model_subtype)
-            ])
-        elif model_type == 'cgfs':
-            reutersc50_dataset.transform = features.create_transformer(feature='cgfs', n_gram=model_subtype)
-        elif model_type == 'ccsaa':
-            reutersc50_dataset.transform = features.create_transformer(feature='ccsaa')
-        # end if
-
         # 10-CV
-        for k in np.arange(args.fold, settings.k):
+        for k in np.arange(0, settings.k):
+            # Load transformer
+            if model_type == 'linear':
+                reutersc50_dataset.transform = torchlanguage.transforms.Compose([
+                    torchlanguage.transforms.GloveVector(model='en_vectors_web_lg'),
+                    torchlanguage.transforms.ToNGram(n=model_subtype),
+                    torchlanguage.transforms.Reshape((-1, input_dim))
+                ])
+            elif model_type == 'cgfs':
+                reutersc50_dataset.transform = features.create_transformer(feature='cgfs', n_gram=model_subtype, fold=k)
+            elif model_type == 'ccsaa':
+                reutersc50_dataset.transform = features.create_transformer(feature='ccsaa', fold=k)
+            # end if
+
             # Linear classifier
             model = etnn.RRCell(input_dim, settings.n_authors)
 
