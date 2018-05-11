@@ -38,7 +38,7 @@ def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
 
 
 # Create transformer
-def create_transformer(feature, embedding="", path="", lang="", n_gram='c1'):
+def create_transformer(feature, embedding="", path="", lang="en_vectors_web_lg", n_gram='c1', fold=0):
     """
     Create the transformer
     :param feature:
@@ -120,11 +120,11 @@ def create_transformer(feature, embedding="", path="", lang="", n_gram='c1'):
         ])
     # ## CNN Glove Feature Selector
     elif "cgfs" in feature:
-        _, transformer = load_cgfs(path, n_gram)
+        _, transformer = load_cgfs(n_gram, fold)
         return transformer
     # ## CNN Character Selector for Authorship Attribution
     elif "ccsaa" in feature:
-        _, transformer = load_ccsaa(path)
+        _, transformer = load_ccsaa(fold)
         return transformer
     else:
         raise NotImplementedError(u"Feature type {} not implemented".format(feature))
