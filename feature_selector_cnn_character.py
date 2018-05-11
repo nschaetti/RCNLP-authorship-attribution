@@ -28,24 +28,19 @@ import os
 import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
-from torchlanguage import datasets
 from torch import optim
 import torch.nn as nn
 import torchlanguage.models
 from torchlanguage import transforms
-
-# Settings
-n_epoch = 150
-n_authors = 15
-use_cuda = True
+from tools import dataset, settings
 
 # Argument parser
-parser = argparse.ArgumentParser(description="CNN Character Feature Selector for AA")
+parser = argparse.ArgumentParser(description="CNN Character Feature Selector for AA (CCSAA)")
 
 # Argument
 parser.add_argument("--output", type=str, help="Embedding output file", default='.')
-parser.add_argument("--n-gram", type=str, help="N-gram (c1, c2)", default='c1')
-parser.add_argument("--fold", type=int, help="Starting fold", default=0)
+parser.add_argument("--start-fold", type=int, help="Starting fold", default=0)
+parser.add_argument("--end-fold", type=int, help="Ending fold", default=9)
 parser.add_argument("--text-length", type=int, help="Text length", default=20)
 parser.add_argument("--batch-size", type=int, help="Batch-size", default=64)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
@@ -71,20 +66,26 @@ else:
     ])
 # end if
 
-# Dataset
-dataset = datasets.ReutersC50Dataset(download=True, n_authors=15, transform=transform)
-
-# Reuters C50 dataset
-dataloader_train = torch.utils.data.DataLoader(torchlanguage.utils.CrossValidation(dataset), batch_size=1, shuffle=True)
-dataloader_valid = torch.utils.data.DataLoader(torchlanguage.utils.CrossValidation(dataset, train=False), batch_size=1, shuffle=True)
+# Load from directory
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset()
+reutersc50_dataset.transform = transform
 
 # Loss function
 loss_function = nn.CrossEntropyLoss()
 
 # 10-CV
-for k in np.arange(args.fold, 10):
+for k in np.arange(args.start_fold, args.end_fold+1):
+    # Set fold
+    reuters_loader_train.set_fold(k)
+    reuters_loader_test.set_fold(k)
+
     # Model
-    model = torchlanguage.models.CCSAA(text_length=args.text_length, vocab_size=84, embedding_dim=50, n_classes=15)
+    model = torchlanguage.models.CCSAA(
+        text_length=args.text_length,
+        vocab_size=settings.ccsaa_voc_size,
+        embedding_dim=settings.ccsaa_embedding_dim,
+        n_classes=settings.n_authors
+    )
     if args.cuda:
         model.cuda()
     # end if
@@ -93,16 +94,16 @@ for k in np.arange(args.fold, 10):
     best_acc = 0.0
 
     # Optimizer
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=settings.ccsaa_lr, momentum=settings.ccsaa_momentum)
 
     # Epoch
-    for epoch in range(n_epoch):
+    for epoch in range(settings.ccsaa_epoch):
         # Total losses
         training_loss = 0.0
         test_loss = 0.0
 
         # Get test data for this fold
-        for i, data in enumerate(dataloader_train):
+        for i, data in enumerate(reuters_loader_train):
             # Inputs and labels
             inputs, labels, time_labels = data
 
@@ -140,7 +141,7 @@ for k in np.arange(args.fold, 10):
         success = 0.0
 
         # For each test sample
-        for i, data in enumerate(dataloader_valid):
+        for i, data in enumerate(reuters_loader_test):
             # Inputs and labels
             inputs, labels, time_labels = data
 
@@ -185,17 +186,13 @@ for k in np.arange(args.fold, 10):
             # Save model
             print(u"Saving model with best accuracy {}".format(best_acc))
             torch.save(model.state_dict(), open(
-                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"character_extractor." + str(k) + u".pth"),
+                os.path.join(args.output, u"ccsaa." + str(k) + u".pth"),
                 'wb'))
             torch.save(transform.transforms[1].token_to_ix, open(
-                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"character_extractor." + str(k) + u".voc.pth"),
+                os.path.join(args.output, u"ccsaa." + str(k) + u".voc.pth"),
                 'wb'))
         # end if
     # end for
-
-    # Next fold
-    dataloader_train.dataset.next_fold()
-    dataloader_valid.dataset.next_fold()
 
     # Reset model
     model = None
