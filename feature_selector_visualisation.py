@@ -22,17 +22,9 @@
 # along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import nsNLP
-import numpy as np
-import torch.utils.data
-from torch.autograd import Variable
-from torchlanguage import datasets
-import torchlanguage.transforms as transforms
-import echotorch.nn as etnn
-import torchlanguage.models as models
-import echotorch.utils
 import matplotlib.pyplot as plt
 import argparse
+from tools import features, dataset
 
 
 ####################################################
@@ -43,44 +35,23 @@ import argparse
 parser = argparse.ArgumentParser(u"Feature selector visualisation")
 parser.add_argument("--n-authors", type=int, default=15)
 parser.add_argument("--model", type=str, required=True)
+parser.add_argument("--sub-type", type=str, required=True)
 args = parser.parse_args()
 
-# CUDA
+# Load from directory
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset()
 
-
-# Feature selector
-if args.model == "cgfs":
-    # CNN Glove Feature Selector
-    cgfs = models.cgfs(pretrained=True, n_gram=2, n_features=60)
-    
-    # Remove last linear layer
-    cgfs.linear2 = echotorch.nn.Identity()
-    
-    # Transformer
-    transformer = transforms.Compose([
-        transforms.GloveVector(),
-        transforms.ToNGram(n=2, overlapse=True),
-        transforms.Reshape((-1, 1, 2, 300)),
-        transforms.FeatureSelector(cgfs, 60, to_variable=True),
-        transforms.Reshape((1, -1, 60)),
-        transforms.Normalize(mean=-4.56512329954, std=0.911449706065)
-    ])
-elif args.model == "ccsaa":
-    pass
-else:
-    raise NotImplementedError("Other model than CFGS or CCSAA is not implemented")
+# Load transformer
+if args.model == 'cgfs':
+    reutersc50_dataset.transform = features.create_transformer(feature='cgfs', n_gram=args.sub_type, fold=0)
+elif args.model == 'ccsaa':
+    reutersc50_dataset.transform = features.create_transformer(feature='ccsaa', fold=0)
 # end if
 
-# Reuters C50 dataset
-reutersloader = torch.utils.data.DataLoader(
-    datasets.ReutersC50Dataset(download=True, n_authors=args.n_authors, transform=transformer),
-    batch_size=1, shuffle=False)
-
 # Get training data for this fold
-for i, data in enumerate(reutersloader):
+for i, data in enumerate(reuters_loader_train):
     # Inputs and labels
     inputs, labels, time_labels = data
-    print(labels)
     plt.imshow(inputs[0, 0].t().numpy(), cmap='Greys')
     plt.show()
 # end for
