@@ -19,11 +19,23 @@ def load_cgfs(n_gram='c1', fold=0):
     :param fold:
     :return:
     """
+    # Path
+    path = os.path.join("feature_selectors", "cgfs", n_gram, "cgfs.{}.p".format(fold))
+
+    # Gram size
+    if n_gram == 'c1':
+        gram_size = 1
+    elif n_gram == 'c2':
+        gram_size = 2
+    elif n_gram == 'c3':
+        gram_size = 3
+    # end if
+
     # CNN Glove Feature Selector
-    cgfs = models.CGFS(n_gram=n_gram, n_features=settings.cgfs_output_dim[n_gram])
+    cgfs = models.CGFS(n_gram=gram_size, n_features=settings.cgfs_output_dim[n_gram])
 
     # Load dict
-    cgfs.load_state_dict(torch.load(open(path, 'rb')))
+    cgfs.load_state_dict(torch.load(open(path, 'rb'), map_location=lambda storage, loc: storage))
 
     # Remove last linear layer
     cgfs.linear2 = etnn.Identity()
@@ -31,8 +43,8 @@ def load_cgfs(n_gram='c1', fold=0):
     # Transformer
     transformer = torchlanguage.transforms.Compose([
         torchlanguage.transforms.GloveVector(),
-        torchlanguage.transforms.ToNGram(n=n_gram, overlapse=True),
-        torchlanguage.transforms.Reshape((-1, 1, n_gram, settings.cgfs_input_dim)),
+        torchlanguage.transforms.ToNGram(n=gram_size, overlapse=True),
+        torchlanguage.transforms.Reshape((-1, 1, gram_size, settings.cgfs_input_dim)),
         torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim[n_gram], to_variable=True),
         torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim[n_gram])),
         torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std)
@@ -49,8 +61,8 @@ def load_ccsaa(fold=0):
     :return:
     """
     # Path
-    path = os.path.join("feature_selector", "ccsaa", "cnn_c1character_extractor.{}.pth".format(fold))
-    voc_path = os.path.join("feature_selector", "ccsaa", "cnn_c1character_extractor.{}.voc.pth".format(fold))
+    path = os.path.join("feature_selectors", "ccsaa", "ccsaa.{}.pth".format(fold))
+    voc_path = os.path.join("feature_selectors", "ccsaa", "ccsaa.{}.voc.pth".format(fold))
 
     # CNN Character Selector for Authorship Attribution
     ccsaa = models.CCSAA(
@@ -60,7 +72,7 @@ def load_ccsaa(fold=0):
     )
 
     # Load dict and voc
-    ccsaa.load_state_dict(torch.load(open(path, 'rb')))
+    ccsaa.load_state_dict(torch.load(open(path, 'rb'), map_location=lambda storage, loc: storage))
     voc = torch.load(open(voc_path, 'rb'))
 
     # Remove last linear layer
