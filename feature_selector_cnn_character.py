@@ -43,6 +43,7 @@ parser.add_argument("--start-fold", type=int, help="Starting fold", default=0)
 parser.add_argument("--end-fold", type=int, help="Ending fold", default=9)
 parser.add_argument("--text-length", type=int, help="Text length", default=20)
 parser.add_argument("--batch-size", type=int, help="Batch-size", default=64)
+parser.add_argument("--n-gram", type=str, help="Character n-gram", default='c1')
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 args = parser.parse_args()
 
@@ -75,9 +76,12 @@ loss_function = nn.CrossEntropyLoss()
 
 # 10-CV
 for k in np.arange(args.start_fold, args.end_fold+1):
+    # Log
+    print(u"Starting fold {}".format(k))
+
     # Set fold
-    reuters_loader_train.set_fold(k)
-    reuters_loader_test.set_fold(k)
+    reuters_loader_train.dataset.set_fold(k)
+    reuters_loader_test.dataset.set_fold(k)
 
     # Model
     model = torchlanguage.models.CCSAA(
@@ -90,11 +94,11 @@ for k in np.arange(args.start_fold, args.end_fold+1):
         model.cuda()
     # end if
 
-    # Best model
-    best_acc = 0.0
-
     # Optimizer
     optimizer = optim.SGD(model.parameters(), lr=settings.ccsaa_lr, momentum=settings.ccsaa_momentum)
+
+    # Best model
+    best_acc = 0.0
 
     # Epoch
     for epoch in range(settings.ccsaa_epoch):
@@ -176,9 +180,13 @@ for k in np.arange(args.start_fold, args.end_fold+1):
         accuracy = success / total * 100.0
 
         # Print and save loss
-        print(
-            u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss,
-                                                                                     accuracy))
+        print(u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(
+            k,
+            epoch,
+            training_loss,
+            test_loss,
+            accuracy)
+        )
 
         # Save if best
         if accuracy > best_acc:
@@ -193,6 +201,9 @@ for k in np.arange(args.start_fold, args.end_fold+1):
                 'wb'))
         # end if
     # end for
+
+    # Log best accuracy
+    print(u"Fold {} with best accuracy {}".format(k, best_acc))
 
     # Reset model
     model = None
