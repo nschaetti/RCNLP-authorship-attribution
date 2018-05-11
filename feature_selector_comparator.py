@@ -25,170 +25,161 @@
 import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
-from torchlanguage import datasets
-import torchlanguage.transforms as transforms
 import echotorch.nn as etnn
-import torchlanguage.models as models
 import echotorch.utils
 import argparse
 import torchlanguage.utils
+from tools import dataset, features, settings
 
-# Settings
-embedding_dim = 300
-n_authors = 15
-n_gram = 2
-use_cuda = True
+
+# Create accuracy table
+def create_accuracy_table(model_types):
+    """
+    Create accuracy table
+    :param model_types:
+    :return:
+    """
+    average_table = dict()
+    for t in model_types:
+        average_table[t] = np.zeros(settings.k)
+    # end for
+    return average_table
+# end create_accuracy_table
+
+
+# Model type
+model_types = ['linear', 'cgfs', 'ccsaa']
+
+# Model subtype
+model_subtypes = {
+    'linear': {1: 300, 2: 600, 3: 900},
+    'cgfs': {'c1': 30, 'c2': 60, 'c3': 90},
+    'ccsaa': {'c1': 150}
+}
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
-parser.add_argument("--fold", type=int, help="Starting fold", default=0)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 args = parser.parse_args()
-
-# Use CUDA?
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-# CNN Glove Feature Selector
-cgfs = models.cgfs(pretrained=True, n_gram=n_gram, n_features=60)
-
-# Remove last linear layer
-cgfs.linear2 = echotorch.nn.Identity()
-
-# Transformer
-transformers = dict()
-transformers['linear'] = transforms.Compose([
-    transforms.GloveVector(),
-    transforms.ToNGram(n=n_gram, overlapse=True),
-    transforms.Reshape((-1, 600)),
-])
-transformers['cnn'] = transforms.Compose([
-    transforms.GloveVector(),
-    transforms.ToNGram(n=n_gram, overlapse=True),
-    transforms.Reshape((-1, 1, 2, 300)),
-    transforms.FeatureSelector(cgfs, 60, to_variable=True),
-    transforms.Reshape((-1, 60)),
-    transforms.Normalize(mean=-4.56512329954, std=0.911449706065)
-])
-
-# Average accuracy
-average_accuracy = dict()
-average_accuracy['linear'] = np.zeros(10)
-average_accuracy['cnn'] = np.zeros(10)
-
-# Average accuracy
-global_average_accuracy = dict()
-global_average_accuracy['linear'] = np.zeros(10)
-global_average_accuracy['cnn'] = np.zeros(10)
+# Average accuracy tables
+average_accuracy = create_accuracy_table(model_types)
+global_average_accuracy = create_accuracy_table(model_types)
 
 # For each model
-for model_type in ['linear', 'cnn']:
-    print(u"Model type {}".format(model_type))
+for model_type in model_types:
+    for model_subtype in model_subtypes:
+        # Log model type
+        print(u"Model type {}, subtype {}".format(model_type, model_subtype))
 
-    # Reuters C50 dataset
-    reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=True, n_authors=15,
-                                                                           transform=transformers[model_type]),
-                                                batch_size=1, shuffle=False)
+        # Load from directory
+        reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset()
 
-    # Data set
-    reuters_dataset = datasets.ReutersC50Dataset(root='./data', download=True, n_authors=n_authors,
-                                                 transform=transformers[model_type])
+        # Input dim
+        input_dim = model_subtypes[model_type][model_subtype]
 
-    # Training dataset
-    reutersloader_train = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidation(reuters_dataset, k=10, train=True),
-        batch_size=1, shuffle=False)
-
-    # Eval. dataset
-    reutersloader_val = torch.utils.data.DataLoader(
-        torchlanguage.utils.CrossValidation(reuters_dataset, k=10, train=False),
-        batch_size=1, shuffle=False)
-
-    # 10-CV
-    for k in np.arange(args.fold, 10):
-        # Model
+        # Load transformer
         if model_type == 'linear':
-            model = etnn.RRCell(n_gram * 300, n_authors)
-        else:
-            model = etnn.RRCell(60, n_authors)
+            reutersc50_dataset.transform = torchlanguage.transforms.Compose([
+                torchlanguage.transforms.GloveVector(model='en_vectors_web_lg'),
+                torchlanguage.transforms.ToNGram(n=model_subtype)
+            ])
+        elif model_type == 'cgfs':
+            reutersc50_dataset.transform = features.create_transformer(feature='cgfs', n_gram=model_subtype)
+        elif model_type == 'ccsaa':
+            reutersc50_dataset.transform = features.create_transformer(feature='ccsaa')
         # end if
 
-        # Get test data for this fold
-        step = 0
-        for i, data in enumerate(reutersloader_train):
-            # Inputs and labels
-            inputs, labels, time_labels = data
+        # 10-CV
+        for k in np.arange(args.fold, settings.k):
+            # Linear classifier
+            model = etnn.RRCell(input_dim, settings.n_authors)
 
-            # View
-            if model_type == 'linear':
-                inputs = inputs.view(1, -1, 600)
-            else:
-                inputs = inputs.view(1, -1, 60)
-            # end if
-            time_labels = time_labels.view(1, -1, n_authors)
+            # Get test data for this fold
+            step = 0
+            for i, data in enumerate(reuters_loader_train):
+                # Inputs and labels
+                inputs, labels, time_labels = data
 
-            # To variable
-            inputs, time_labels = Variable(inputs), Variable(time_labels)
+                # View
+                inputs = inputs.view(1, -1, input_dim)
 
-            # Give to RR
-            model(inputs, time_labels)
+                # end if
+                time_labels = time_labels.view(1, -1, settings.n_authors)
+
+                # To variable
+                inputs, time_labels = Variable(inputs), Variable(time_labels)
+
+                # Give to RR
+                model(inputs, time_labels)
+            # end for
+
+            # Training
+            model.finalize()
+
+            # Counters
+            total = 0.0
+            success = 0.0
+            global_total = 0.0
+            global_success = 0.0
+
+            # For each test sample
+            for i, data in enumerate(reuters_loader_test):
+                # Inputs and labels
+                inputs, labels, time_labels = data
+
+                # Outputs
+                outputs = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
+
+                # To variable
+                inputs, time_labels = Variable(inputs), Variable(time_labels)
+
+                # Forward
+                model_outputs = model(inputs)
+
+                # Normalized
+                y_predicted = echotorch.utils.max_average_through_time(model_outputs, dim=1)
+
+                # Compare
+                if torch.equal(y_predicted.data, labels):
+                    global_success += 1.0
+                # end if
+
+                # Take the max as predicted
+                _, predicted = torch.max(model_outputs.data, 2)
+
+                # Add to correctly classified word
+                success += (predicted == outputs).sum()
+                total += predicted.size(1)
+                global_total += 1.0
+            # end for
+
+            # Print and save loss
+            print(u"\t\tModel {}, Subtype {}, Fold {}, accuracy {} / {}".format(
+                model_type,
+                model_subtype,
+                k,
+                success / total * 100.0,
+                global_success / global_total * 100.0)
+            )
+
+            # Save accuracy
+            average_accuracy[model_type][k] = success / total * 100.0
+            global_average_accuracy[model_type][k] = global_success / global_total * 100.0
+
+            # Reset model
+            model.reset()
+
+            # Next fold
+            reuters_loader_train.dataset.next_fold()
+            reuters_loader_test.dataset.next_fold()
         # end for
 
-        # Training
-        model.finalize()
-
-        # Counters
-        total = 0.0
-        success = 0.0
-        global_total = 0.0
-        global_success = 0.0
-
-        # For each test sample
-        for i, data in enumerate(reutersloader_val):
-            # Inputs and labels
-            inputs, labels, time_labels = data
-
-            # Outputs
-            outputs = torch.LongTensor(1, inputs.size(1)).fill_(labels[0])
-
-            # To variable
-            inputs, time_labels = Variable(inputs), Variable(time_labels)
-
-            # Forward
-            model_outputs = model(inputs)
-
-            # Normalized
-            y_predicted = echotorch.utils.max_average_through_time(model_outputs, dim=1)
-
-            # Compare
-            if torch.equal(y_predicted.data, labels):
-                global_success += 1.0
-            # end if
-
-            # Take the max as predicted
-            _, predicted = torch.max(model_outputs.data, 2)
-
-            # Add to correctly classified word
-            success += (predicted == outputs).sum()
-            total += predicted.size(1)
-            global_total += 1.0
-        # end for
-
-        # Print and save loss
-        print(u"\t\tModel {}, Fold {}, accuracy {} / {}".format(model_type, k, success / total * 100.0, global_success / global_total * 100.0))
-
-        # Save accuracy
-        average_accuracy[model_type][k] = success / total * 100.0
-        global_average_accuracy[model_type][k] = global_success / global_total * 100.0
-
-        # Reset model
-        model.reset()
-
-        # Next fold
-        reutersloader_train.dataset.next_fold()
-        reutersloader_val.dataset.next_fold()
+        print(u"\t10-fold cross validation for {} : {} / {}".format(
+            model_type,
+            np.average(average_accuracy[model_type]),
+            np.average(global_average_accuracy[model_type]))
+        )
     # end for
-
-    print(u"\t10-fold cross validation for {} : {} / {}".format(model_type, np.average(average_accuracy[model_type]), np.average(global_average_accuracy[model_type])))
 # end for
-
-print(u"Difference : {} / {}".format(np.average(average_accuracy['cnn']) - np.average(average_accuracy['linear']), np.average(global_average_accuracy['cnn']) - np.average(global_average_accuracy['linear'])))
