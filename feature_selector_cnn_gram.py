@@ -29,47 +29,53 @@ import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
 from echotorch import datasets
-from echotorch.transforms import text
 from modules import CNN2DDeepFeatureSelector
 from torch import optim
 import torch.nn as nn
 import torchlanguage.models
-
-# Settings
-n_epoch = 1200
-embedding_dim = 300
-n_authors = 15
-use_cuda = True
+from tools import dataset, features, settings
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
 
 # Argument
 parser.add_argument("--output", type=str, help="Embedding output file", default='.')
-parser.add_argument("--n-features", type=int, help="Number of features", default=30)
-parser.add_argument("--fold", type=int, help="Starting fold", default=0)
-parser.add_argument("--n-gram", type=int, help="N-gram", default=2)
+parser.add_argument("--start-fold", type=int, help="Starting fold", default=0)
+parser.add_argument("--end-fold", type=int, help="Ending fold", default=9)
+parser.add_argument("--n-gram", type=int, help="Word n-gram", default=2)
 parser.add_argument("--no-cuda", action='store_true', default=False, help="Enables CUDA training")
 args = parser.parse_args()
-
-# Use CUDA?
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 # Word embedding
-transform = text.GloveVector(model='en_vectors_web_lg')
+transform = torchlanguage.transforms.Compose([
+    torchlanguage.transforms.GloveVector(model='en_vectors_web_lg'),
+    torchlanguage.transforms.ToNGram(n=args.n_gram),
+    torchlanguage.transforms.Reshape((-1, args.n_gram, settings.glove_embedding_dim))
+])
 
-# Reuters C50 dataset
-reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=True, n_authors=15,
-                                                                       transform=transform),
-                                            batch_size=1, shuffle=False)
+# Load from directory
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset()
+reutersc50_dataset.transform = transform
 
 # Loss function
 loss_function = nn.NLLLoss()
 
 # 10-CV
-for k in np.arange(args.fold, 10):
+for k in np.arange(args.start_fold, args.end_fold+1):
+    # Log
+    print(u"Starting fold {}".format(k))
+
+    # Set fold
+    reuters_loader_train.dataset.set_fold(k)
+    reuters_loader_test.dataset.set_fold(k)
+
     # Model
-    model = torchlanguage.models.CGFS(n_gram=args.n_gram, n_authors=n_authors, n_features=args.n_features)
+    model = torchlanguage.models.CGFS(
+        n_gram=args.n_gram,
+        n_authors=settings.n_authors,
+        n_features=settings.cgfs_output_dim[args.n_gram]
+    )
     if args.cuda:
         model.cuda()
     # end if
@@ -78,28 +84,25 @@ for k in np.arange(args.fold, 10):
     best_acc = 0.0
 
     # Optimizer
-    optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0.9)
+    optimizer = optim.SGD(
+        model.parameters(),
+        lr=settings.cgfs_lr,
+        momentum=settings.cgfs_momentum
+    )
 
     # Epoch
-    for epoch in range(n_epoch):
+    for epoch in range(settings.cgfs_epoch):
         # Total losses
         training_loss = 0.0
         test_loss = 0.0
 
-        # Set fold and training mode
-        reutersloader.dataset.set_fold(k)
-        reutersloader.dataset.set_train(True)
-
         # Get test data for this fold
-        for i, data in enumerate(reutersloader):
+        for i, data in enumerate(reuters_loader_train):
             # Inputs and labels
-            sample_inputs, labels, time_labels = data
+            inputs, labels, time_labels = data
 
-            # Create inputs
-            inputs = torch.zeros(sample_inputs.size(1) - args.n_gram + 1, 1, args.n_gram, embedding_dim)
-            for i in np.arange(args.n_gram, sample_inputs.size(1) + 1):
-                inputs[i - args.n_gram, 0] = sample_inputs[0, i - args.n_gram:i]
-            # end for
+            # View
+            inputs = inputs.view((-1, 1, args.n_gram, settings.glove_embedding_dim))
 
             # Outputs
             outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
@@ -127,23 +130,17 @@ for k in np.arange(args.fold, 10):
             training_loss += loss.data[0]
         # end for
 
-        # Set test mode
-        reutersloader.dataset.set_train(False)
-
         # Counters
         total = 0.0
         success = 0.0
 
         # For each test sample
-        for i, data in enumerate(reutersloader):
+        for i, data in enumerate(reuters_loader_test):
             # Inputs and labels
-            sample_inputs, labels, time_labels = data
+            inputs, labels, time_labels = data
 
-            # Create inputs
-            inputs = torch.zeros(sample_inputs.size(1) - args.n_gram + 1, 1, args.n_gram, embedding_dim)
-            for i in np.arange(args.n_gram, sample_inputs.size(1) + 1):
-                inputs[i - args.n_gram, 0] = sample_inputs[0, i - args.n_gram:i]
-            # end for
+            # View
+            inputs = inputs.view((-1, 1, args.n_gram, settings.glove_embedding_dim))
 
             # Outputs
             outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
@@ -183,10 +180,13 @@ for k in np.arange(args.fold, 10):
             # Save model
             print(u"Saving model with best accuracy {}".format(best_acc))
             torch.save(model.state_dict(), open(
-                os.path.join(args.output, u"cnn_" + str(args.n_gram) + u"gram_feature_extractor." + str(k) + u".p"),
+                os.path.join(args.output, u"cgfs." + str(k) + u".p"),
                 'wb'))
         # end if
     # end for
+
+    # Log best accuracy
+    print(u"Fold {} with best accuracy {}".format(k, best_acc))
 
     # Reset model
     model = None
