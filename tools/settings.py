@@ -10,7 +10,7 @@ k = 10
 glove_embedding_dim = 300
 
 # CGFS settings
-cgfs_epoch = 1200
+cgfs_epoch = 400
 cgfs_input_dim = glove_embedding_dim
 cgfs_mean = -4.56512329954
 cgfs_std = 0.911449706065
