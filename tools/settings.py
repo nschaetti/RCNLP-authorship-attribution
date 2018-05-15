@@ -14,7 +14,7 @@ cgfs_epoch = 400
 cgfs_input_dim = glove_embedding_dim
 cgfs_mean = -4.56512329954
 cgfs_std = 0.911449706065
-cgfs_output_dim = {1: 30, 2: 60, 3: 90}
+cgfs_output_dim = {'c1': 30, 'c2': 60, 'c3': 90}
 cgfs_lr = 0.001
 cgfs_momentum = 0.9
 
