@@ -48,12 +48,12 @@ def create_accuracy_table(model_types):
 
 
 # Model type
-model_types = ['linear', 'cgfs', 'ccsaa']
+model_types = ['cgfs']
 
 # Model subtype
 model_subtypes = {
     'linear': {1: 300, 2: 600, 3: 900},
-    'cgfs': {'c2': 60},
+    'cgfs': {'c3': 90},
     'ccsaa': {'c1': 150}
 }
 
@@ -89,13 +89,16 @@ for model_type in model_types:
                     torchlanguage.transforms.Reshape((-1, input_dim))
                 ])
             elif model_type == 'cgfs':
-                reutersc50_dataset.transform = features.create_transformer(feature='cgfs', n_gram=model_subtype, fold=k)
+                reutersc50_dataset.transform = features.create_transformer(feature='cgfs', n_gram=model_subtype, fold=k, use_cuda=args.cuda)
             elif model_type == 'ccsaa':
-                reutersc50_dataset.transform = features.create_transformer(feature='ccsaa', fold=k)
+                reutersc50_dataset.transform = features.create_transformer(feature='ccsaa', fold=k, use_cuda=args.cuda)
             # end if
 
             # Linear classifier
             model = etnn.RRCell(input_dim, settings.n_authors)
+            if args.cuda:
+                model.cuda()
+            # end if
 
             # Get test data for this fold
             step = 0
@@ -111,6 +114,9 @@ for model_type in model_types:
 
                 # To variable
                 inputs, time_labels = Variable(inputs), Variable(time_labels)
+                if args.cuda:
+                    inputs, time_labels = inputs.cuda(), time_labels.cuda()
+                # end if
 
                 # Give to RR
                 model(inputs, time_labels)
@@ -135,6 +141,9 @@ for model_type in model_types:
 
                 # To variable
                 inputs, time_labels = Variable(inputs), Variable(time_labels)
+                if args.cuda:
+                    inputs, labels, time_labels, outputs = inputs.cuda(), labels.cuda(), time_labels.cuda(), outputs.cuda()
+                # end if
 
                 # Forward
                 model_outputs = model(inputs)
