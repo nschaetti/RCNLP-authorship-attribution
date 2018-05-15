@@ -101,6 +101,10 @@ for space in param_space:
 
         # For each batch
         for k in range(10):
+            # Choose fold
+            reuters_loader_train.dataset.set_fold(k)
+            reuters_loader_test.dataset.set_fold(k)
+
             # Get training data for this fold
             for i, data in enumerate(reuters_loader_train):
                 # Inputs and labels
@@ -114,7 +118,7 @@ for space in param_space:
                 esn(inputs, time_labels)
 
                 # OOV
-                oov = np.append(oov, [reutersc50_dataset.transform.transforms[2].oov])
+                # oov = np.append(oov, [reutersc50_dataset.transform.transforms[2].oov])
             # end for
 
             # Finalize training
@@ -155,13 +159,10 @@ for space in param_space:
                 # end if
 
                 # OOV
-                oov = np.append(oov, [reutersc50_dataset.transform.oov])
+                # oov = np.append(oov, [reutersc50_dataset.transform.transforms[2].oov])
 
                 count += 1.0
             # end for
-
-            # OOV
-            print(u"OOV : {} %".format(np.average(oov)))
 
             # Print success rate
             xp.add_result(successes / count)
