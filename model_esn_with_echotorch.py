@@ -102,6 +102,7 @@ for space in param_space:
         # For each batch
         for k in range(10):
             # Choose fold
+            xp.set_fold_state(k)
             reuters_loader_train.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
 
