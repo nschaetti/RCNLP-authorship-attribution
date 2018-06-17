@@ -38,7 +38,7 @@ def create_tokenizer(tokenizer_type, lang="en_core_web_lg"):
 
 
 # Create transformer
-def create_transformer(feature, embedding="", path="", lang="en_vectors_web_lg", n_gram='c1', fold=0, use_cuda=False):
+def create_transformer(feature, embedding="", path="", lang="en_vectors_web_lg", fold=0, use_cuda=False):
     """
     Create the transformer
     :param feature:
@@ -72,7 +72,10 @@ def create_transformer(feature, embedding="", path="", lang="en_vectors_web_lg",
     # ## Word Vector
     elif "wv" in feature:
         if embedding == 'glove':
-            return torchlanguage.transforms.GloveVector(model=lang)
+            return torchlanguage.transforms.Compose([
+                torchlanguage.transforms.GloveVector(model=lang),
+                torchlanguage.transforms.Reshape((-1, 300))
+            ])
         elif embedding == 'word2vec':
             return torchlanguage.transforms.Compose([
                 torchlanguage.transforms.Token(model=lang),
@@ -103,7 +106,7 @@ def create_transformer(feature, embedding="", path="", lang="en_vectors_web_lg",
         token_to_ix, embedding_weights = load_character_embedding(path)
         embedding_dim = embedding_weights.size(1)
         return torchlanguage.transforms.Compose([
-            torchlanguage.transforms.Character2Gram(overlapse=False),
+            torchlanguage.transforms.Character2Gram(overlapse=True),
             torchlanguage.transforms.ToIndex(token_to_ix=token_to_ix),
             torchlanguage.transforms.Embedding(weights=embedding_weights, voc_size=len(token_to_ix)),
             torchlanguage.transforms.Reshape((-1, embedding_dim))
@@ -113,14 +116,14 @@ def create_transformer(feature, embedding="", path="", lang="en_vectors_web_lg",
         token_to_ix, embedding_weights = load_character_embedding(path)
         embedding_dim = embedding_weights.size(1)
         return torchlanguage.transforms.Compose([
-            torchlanguage.transforms.Character3Gram(overlapse=False),
+            torchlanguage.transforms.Character3Gram(overlapse=True),
             torchlanguage.transforms.ToIndex(token_to_ix=token_to_ix),
             torchlanguage.transforms.Embedding(weights=embedding_weights, voc_size=len(token_to_ix)),
             torchlanguage.transforms.Reshape((-1, embedding_dim))
         ])
     # ## CNN Glove Feature Selector
     elif "cgfs" in feature:
-        _, transformer = load_cgfs(n_gram, fold, use_cuda)
+        _, transformer = load_cgfs(fold, use_cuda)
         return transformer
     # ## CNN Character Selector for Authorship Attribution
     elif "ccsaa" in feature:

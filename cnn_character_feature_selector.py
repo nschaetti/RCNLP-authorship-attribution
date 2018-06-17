@@ -194,6 +194,10 @@ for k in np.arange(args.fold, 10):
         # end if
     # end for
 
+    # Next fold
+    dataloader_train.dataset.next_fold()
+    dataloader_valid.dataset.next_fold()
+
     # Reset model
     model = None
 # edn for

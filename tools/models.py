@@ -12,33 +12,26 @@ import os
 
 
 # Load CGFS
-def load_cgfs(n_gram='c1', fold=0, use_cuda=False):
+def load_cgfs(fold=0, use_cuda=False):
     """
     Load CGFS
-    :param n_gram:
     :param fold:
     :return:
     """
     # Path
-    path = os.path.join("feature_selectors", "cgfs", n_gram, "cgfs.{}.p".format(fold))
-
-    # Gram size
-    if n_gram == 'c1':
-        gram_size = 1
-    elif n_gram == 'c2':
-        gram_size = 2
-    elif n_gram == 'c3':
-        gram_size = 3
-    # end if
+    path = os.path.join("feature_selectors", "cgfs", "c3", "cgfs.{}.p".format(fold))
 
     # CNN Glove Feature Selector
-    cgfs = models.CGFS(n_gram=gram_size, n_features=settings.cgfs_output_dim[n_gram])
+    cgfs = models.CGFS(n_gram=3, n_features=settings.cgfs_output_dim['c3'])
     if use_cuda:
         cgfs.cuda()
     # end if
 
+    # Load states
+    state_dict = torch.load(open(path, 'rb'))
+
     # Load dict
-    cgfs.load_state_dict(torch.load(open(path, 'rb'), map_location=lambda storage, loc: storage))
+    cgfs.load_state_dict(state_dict)
 
     # Remove last linear layer
     cgfs.linear2 = etnn.Identity()
@@ -47,21 +40,21 @@ def load_cgfs(n_gram='c1', fold=0, use_cuda=False):
     if use_cuda:
         transformer = torchlanguage.transforms.Compose([
             torchlanguage.transforms.GloveVector(),
-            torchlanguage.transforms.ToNGram(n=gram_size, overlapse=True),
-            torchlanguage.transforms.Reshape((-1, 1, gram_size, settings.cgfs_input_dim)),
+            torchlanguage.transforms.ToNGram(n=3, overlapse=True),
+            torchlanguage.transforms.Reshape((-1, 1, 3, settings.cgfs_input_dim)),
             torchlanguage.transforms.ToCUDA(),
-            torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim[n_gram], to_variable=True),
-            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim[n_gram])),
-            torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std)
+            torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim['c3'], to_variable=True),
+            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim['c3'])),
+            torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std, input_dim=90)
         ])
     else:
         transformer = torchlanguage.transforms.Compose([
             torchlanguage.transforms.GloveVector(),
-            torchlanguage.transforms.ToNGram(n=gram_size, overlapse=True),
-            torchlanguage.transforms.Reshape((-1, 1, gram_size, settings.cgfs_input_dim)),
-            torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim[n_gram], to_variable=True),
-            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim[n_gram])),
-            torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std)
+            torchlanguage.transforms.ToNGram(n=3, overlapse=True),
+            torchlanguage.transforms.Reshape((-1, 1, 3, settings.cgfs_input_dim)),
+            torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim['c3'], to_variable=True),
+            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim['c3'])),
+            torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std, input_dim=90)
         ])
     # end if
     return cgfs, transformer
@@ -90,7 +83,7 @@ def load_ccsaa(fold=0, use_cuda=False):
     # end if
 
     # Load dict and voc
-    ccsaa.load_state_dict(torch.load(open(path, 'rb'), map_location=lambda storage, loc: storage))
+    ccsaa.load_state_dict(torch.load(open(path, 'rb')))
     voc = torch.load(open(voc_path, 'rb'))
 
     # Remove last linear layer
@@ -106,7 +99,7 @@ def load_ccsaa(fold=0, use_cuda=False):
             torchlanguage.transforms.ToCUDA(),
             torchlanguage.transforms.FeatureSelector(ccsaa, settings.ccsaa_output_dim, to_variable=True),
             torchlanguage.transforms.Reshape((-1, settings.ccsaa_output_dim)),
-            torchlanguage.transforms.Normalize(mean=settings.ccsaa_mean, std=settings.ccsaa_std)
+            torchlanguage.transforms.Normalize(mean=settings.ccsaa_mean, std=settings.ccsaa_std, input_dim=150)
         ])
     else:
         transformer = torchlanguage.transforms.Compose([
@@ -116,7 +109,7 @@ def load_ccsaa(fold=0, use_cuda=False):
             torchlanguage.transforms.Reshape((-1, settings.ccsaa_text_length)),
             torchlanguage.transforms.FeatureSelector(ccsaa, settings.ccsaa_output_dim, to_variable=True),
             torchlanguage.transforms.Reshape((-1, settings.ccsaa_output_dim)),
-            torchlanguage.transforms.Normalize(mean=settings.ccsaa_mean, std=settings.ccsaa_std)
+            torchlanguage.transforms.Normalize(mean=settings.ccsaa_mean, std=settings.ccsaa_std, input_dim=150)
         ])
     # end if
     return ccsaa, transformer

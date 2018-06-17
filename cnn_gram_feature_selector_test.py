@@ -26,11 +26,12 @@ import nsNLP
 import numpy as np
 import torch.utils.data
 from torch.autograd import Variable
-import torchlanguage.datasets
+from torchlanguage import datasets
+import torchlanguage.transforms as transforms
 import echotorch.nn as etnn
+import torchlanguage.models as models
 import echotorch.utils
-from tools import functions
-import os
+import matplotlib.pyplot as plt
 
 ####################################################
 # Functions
@@ -53,6 +54,17 @@ def converter_in(converters_desc, converter):
     return False
 # end converter_in
 
+
+# Load character embedding
+def load_character_embedding(emb_path):
+    """
+    Load character embedding
+    :param emb_path:
+    :return:
+    """
+    token_to_ix, weights = torch.load(open(emb_path, 'rb'))
+    return token_to_ix, weights
+# end load_character_embedding
 
 ####################################################
 # Main
@@ -152,28 +164,29 @@ xp = nsNLP.tools.ResultManager\
     verbose=args.verbose
 )
 
-# Load from directory
-reutersc50_dataset = torchlanguage.datasets.ReutersC50Dataset(
-    n_authors=15,
-    download=True
-)
+# CNN Glove Feature Selector
+cgfs = models.cgfs(pretrained=True, n_gram=2, n_features=60)
 
-# Reuters C50 dataset training
-reuters_loader_train = torch.utils.data.DataLoader(
-    torchlanguage.utils.CrossValidation(reutersc50_dataset),
-    batch_size=1,
-    shuffle=False
-)
+# Remove last linear layer
+cgfs.linear2 = echotorch.nn.Identity()
 
-# Reuters C50 dataset test
-reuters_loader_test = torch.utils.data.DataLoader(
-    torchlanguage.utils.CrossValidation(reutersc50_dataset, train=False),
-    batch_size=1,
-    shuffle=False
-)
+# Transformer
+transformer = transforms.Compose([
+    transforms.GloveVector(),
+    transforms.ToNGram(n=2, overlapse=True),
+    transforms.Reshape((-1, 1, 2, 300)),
+    transforms.FeatureSelector(cgfs, 60, to_variable=True),
+    transforms.Reshape((1, -1, 60)),
+    transforms.Normalize(mean=-4.56512329954, std=0.911449706065)
+])
+
+# Reuters C50 dataset
+reutersloader = torch.utils.data.DataLoader(
+    datasets.ReutersC50Dataset(root=args.dataset, download=True, n_authors=args.n_authors, transform=transformer),
+    batch_size=1, shuffle=False)
 
 # Print authors
-xp.write(u"Authors : {}".format(reutersc50_dataset.authors), log_level=0)
+xp.write(u"Authors : {}".format(reutersloader.dataset.authors), log_level=0)
 
 # First params
 rc_size = int(args.get_space()['reservoir_size'][0])
@@ -202,15 +215,10 @@ for space in param_space:
     input_scaling = space['input_scaling']
     input_sparsity = space['input_sparsity']
     spectral_radius = space['spectral_radius']
-    feature = space['transformer'][0][0]
     aggregation = space['aggregation'][0][0]
     state_gram = space['state_gram']
-    feedbacks_sparsity = space['feedbacks_sparsity']
     lang = space['lang'][0][0]
     embedding = space['embedding'][0][0]
-
-    # Choose the right transformer
-    reutersc50_dataset.transform = functions.create_transformer(feature, embedding, args.embedding_path, lang)
 
     # Set experience state
     xp.set_state(space)
@@ -222,106 +230,44 @@ for space in param_space:
     for n in range(args.n_samples):
         # Set sample
         xp.set_sample_state(n)
-
+        
         # ESN cell
         esn = etnn.LiESN(
-            input_dim=reutersc50_dataset.transform.input_dim,
+            input_dim=transformer.transforms[-1].input_dim,
             hidden_dim=reservoir_size,
-            output_dim=reutersc50_dataset.n_authors,
+            output_dim=reutersloader.dataset.n_authors,
             spectral_radius=spectral_radius,
             sparsity=input_sparsity,
             input_scaling=input_scaling,
             w_sparsity=w_sparsity,
             w=w if args.keep_w else None,
             learning_algo='inv',
-            leaky_rate=leak_rate,
-            feedbacks=args.feedbacks,
-            wfdb_sparsity=feedbacks_sparsity
+            leaky_rate=leak_rate
         )
         if use_cuda:
             esn.cuda()
         # end if
 
-        # Average
-        average_k_fold = np.array([])
-
-        # OOV
-        oov = np.array([])
-
-        # For each batch
-        for k in range(10):
-            # Get training data for this fold
-            for i, data in enumerate(reuters_loader_train):
-                # Inputs and labels
-                inputs, labels, time_labels = data
-
-                # To variable
-                inputs, time_labels = Variable(inputs), Variable(time_labels)
-                if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
-
-                # Accumulate xTx and xTy
-                esn(inputs, time_labels)
-
-                # OOV
-                oov = np.append(oov, [reutersc50_dataset.transform.transforms[2].oov])
-            # end for
-
-            # Finalize training
-            esn.finalize()
-
-            # Counters
-            successes = 0.0
-            count = 0.0
-
-            # Get test data for this fold
-            for i, data in enumerate(reuters_loader_test):
-                # Inputs and labels
-                inputs, labels, time_labels = data
-
-                # To variable
-                inputs, labels = Variable(inputs), Variable(labels)
-                if use_cuda: inputs, labels = inputs.cuda(), labels.cuda()
-
-                # Predict
-                y_predicted = esn(inputs)
-
-                # Normalized
-                y_predicted -= torch.min(y_predicted)
-                y_predicted /= torch.max(y_predicted) - torch.min(y_predicted)
-
-                # Sum to one
-                sums = torch.sum(y_predicted, dim=2)
-                for t in range(y_predicted.size(1)):
-                    y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
-                # end for
-
-                # Normalized
-                y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
-
-                # Compare
-                if torch.equal(y_predicted, labels):
-                    successes += 1.0
-                # end if
-
-                # OOV
-                oov = np.append(oov, [reutersc50_dataset.transform.oov])
-
-                count += 1.0
-            # end for
-
-            # OOV
-            print(u"OOV : {} %".format(np.average(oov)))
-
-            # Print success rate
-            xp.add_result(successes / count)
-
-            # Reset learning
-            esn.reset()
+        # Get training data for this fold
+        for i, data in enumerate(reutersloader):
+            # Inputs and labels
+            inputs, labels, time_labels = data
+            plt.imshow(inputs[0, 0].t().numpy(), cmap='Greys')
+            plt.show()
         # end for
-    # end for
 
-    # W index
-    w_index += 1
+        # Finalize training
+        esn.finalize()
+
+        # Get test data for this fold
+        for i, data in enumerate(reutersloader):
+            # Inputs and labels
+            inputs, labels, time_labels = data
+        # end for
+
+        # Reset learning
+        esn.reset()
+    # end for
 
     # Last space
     last_space = space

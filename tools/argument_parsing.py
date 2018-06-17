@@ -67,6 +67,8 @@ def parser_esn_training():
     args.add_argument(command="--feedbacks-sparsity", name="feedbacks_sparsity", type=str, help="Feedbacks sparsity",
                       extended=True,
                       default="0.05")
+    args.add_argument(command="--n-layers", name="n_layers", type=int, help="Number of layers in a stacked ESN", extended=True,
+                      default="1")
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,

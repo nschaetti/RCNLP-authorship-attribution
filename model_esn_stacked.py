@@ -32,6 +32,7 @@ from echotorch.transforms import text
 import echotorch.nn as etnn
 import echotorch.utils
 from torch.utils.data.dataloader import DataLoader
+from tools import argument_parsing, dataset, functions, features
 
 ####################################################
 # Functions
@@ -68,7 +69,7 @@ def load_character_embedding(emb_path):
 
 
 # Create matrices
-def create_matrices(n_layers):
+def create_matrices(rc_size, rc_w_sparsity, n_layers):
     """
     Create matrices
     :param n_layers:
@@ -90,121 +91,37 @@ def create_matrices(n_layers):
 ####################################################
 
 
-# Argument builder
-args = nsNLP.tools.ArgumentBuilder(desc=u"Argument test")
+# Parse args
+args, use_cuda, param_space, xp = argument_parsing.parser_esn_training()
 
-# Dataset arguments
-args.add_argument(command="--dataset", name="dataset", type=str, default="data/",
-                  help="JSON file with the file description for each authors", required=False, extended=False)
-args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
+# Load from directory
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset()
 
-# Author parameters
-args.add_argument(command="--n-authors", name="n_authors", type=int,
-                  help="Number of authors to include in the test", default=15, extended=False)
-for i in range(15):
-    args.add_argument(command="--author{}".format(i), name="author{}".format(i), type=str,
-                      help="{}th author to test".format(i), extended=False)
-# end for
-
-# ESN arguments
-args.add_argument(command="--reservoir-size", name="reservoir_size", type=float, help="Reservoir's size",
-                  required=True, extended=True)
-args.add_argument(command="--spectral-radius", name="spectral_radius", type=float, help="Spectral radius",
-                  default="1.0", extended=True)
-args.add_argument(command="--input-scaling", name="input_scaling", type=str, help="Input scaling", extended=True,
-                  default="0.5")
-args.add_argument(command="--input-sparsity", name="input_sparsity", type=str, help="Input sparsity", extended=True,
-                  default="0.05")
-args.add_argument(command="--w-sparsity", name="w_sparsity", type=str, help="W sparsity", extended=True,
-                  default="0.05")
-args.add_argument(command="--transformer", name="transformer", type=str,
-                  help="The text transformer to use (wv, cnn)", default='wv', extended=True)
-args.add_argument(command="--keep-w", name="keep_w", action='store_true', help="Keep W matrix", default=False,
-                  extended=False)
-args.add_argument(command="--n-layers", name="n_layers", type=int, help="Number of layers",
-                  default=5, extended=True)
-
-# Tokenizer and word vector parameters
-args.add_argument(command="--lang", name="lang", type=str, help="Tokenizer language parameters",
-                  default='en_vectors_web_lg', extended=True)
-
-# Experiment output parameters
-args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
-args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
-                  extended=False, required=True)
-args.add_argument(command="--output", name="output", type=str, help="Experiment's output directory", required=True,
-                  extended=False)
-args.add_argument(command="--n-samples", name="n_samples", type=int, help="Number of different reservoir to test",
-                  default=1, extended=False)
-args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose level", default=2, extended=False)
-args.add_argument(command="--cuda", name="cuda", action='store_true',
-                  help="Use CUDA?", default=False, extended=False)
-
-# Parse arguments
-args.parse()
-
-# CUDA
-use_cuda = torch.cuda.is_available() if args.cuda else False
-
-# Parameter space
-param_space = nsNLP.tools.ParameterSpace(args.get_space())
-
-# Experiment
-xp = nsNLP.tools.ResultManager\
-(
-    args.output,
-    args.name,
-    args.description,
-    args.get_space(),
-    args.n_samples,
-    args.k,
-    verbose=args.verbose
-)
-
-# First params
-rc_size = int(args.get_space()['reservoir_size'][0])
-rc_w_sparsity = args.get_space()['w_sparsity'][0]
+# Print authors
+xp.write(u"Authors : {}".format(reutersc50_dataset.authors), log_level=0)
 
 # Last space
 last_space = dict()
 
 # Create W matrices
-base_w = create_matrices(int(args.get_space()['n_layers'][-1]))
+base_w = create_matrices(int(args.get_space()['reservoir_size'][-1]), float(args.get_space()['w_sparsity'][-1]), int(args.get_space()['n_layers'][-1]))
 
 # Iterate
 for space in param_space:
     # Params
-    reservoir_size = int(space['reservoir_size'])
-    w_sparsity = space['w_sparsity']
-    input_scaling = space['input_scaling']
-    input_sparsity = space['input_sparsity']
-    spectral_radius = space['spectral_radius']
-    transformer = space['transformer'][0][0]
-    aggregation = space['aggregation'][0][0]
-    lang = space['lang'][0][0]
-    n_layers = space['n_layers']
-    leaky_rates = np.linspace(1.0, 0.01, n_layers)
+    reservoir_size, w_sparsity, leak_rate, input_scaling, \
+    input_sparsity, spectral_radius, feature, aggregation, \
+    state_gram, feedbacks_sparsity, lang, embedding = functions.get_params(space)
+    n_layers = int(space['n_layers'])
+    if n_layers == 1:
+        leaky_rates = leak_rate
+    else:
+        leaky_rates = np.linspace(1.0, leak_rate, n_layers)
+    # end if
     w = base_w[:n_layers]
 
     # Choose the right transformer
-    if "wv" in transformer:
-        transform = torchlanguage.transforms.GloveVector(model=lang)
-    # end if
-
-    # Load from directory
-    dataset = torchlanguage.datasets.ReutersC50Dataset(
-        n_authors=15,
-        download=True,
-        transform=transform
-    )
-
-    # Cross validation
-    cross_val_dataset = {'train': torchlanguage.utils.CrossValidation(dataset, k=k),
-                         'test': torchlanguage.utils.CrossValidation(dataset, k=k, train=False)}
-
-    # Data loader
-    data_loader_train = DataLoader(cross_val_dataset['train'], batch_size=1, shuffle=False, num_workers=1)
-    data_loader_test = DataLoader(cross_val_dataset['test'], batch_size=1, shuffle=False, num_workers=1)
+    reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang)
 
     # Set experience state
     xp.set_state(space)
@@ -219,14 +136,15 @@ for space in param_space:
 
         # Stacked ESN
         esn = etnn.StackedESN(
-            input_dim=transform.input_dim,
-            hidden_dim=reservoir_size,
-            output_dim=dataset.n_authors,
+            input_dim=reutersc50_dataset.transform.input_dim,
+            hidden_dim=[reservoir_size]*n_layers,
+            output_dim=reutersc50_dataset.n_authors,
             spectral_radius=spectral_radius,
             sparsity=input_sparsity,
             input_scaling=input_scaling,
             w=w,
-            w_sparsity=w_sparsity
+            w_sparsity=w_sparsity,
+            leaky_rate=leaky_rates
         )
         if use_cuda:
             esn.cuda()
@@ -240,20 +158,16 @@ for space in param_space:
 
         # For each batch
         for k in range(10):
-            # Set k
+            # Choose fold
             xp.set_fold_state(k)
+            reuters_loader_train.dataset.set_fold(k)
+            reuters_loader_test.dataset.set_fold(k)
 
             # Get training data for this fold
-            for i, data in enumerate(data_loader_train):
+            for i, data in enumerate(reuters_loader_train):
                 # Inputs and labels
                 inputs, labels, time_labels = data
-                print(inputs)
-                print(time_labels)
-                print(inputs.size())
-                print(time_labels.size())
-                print(inputs[0, 0])
-                print(time_labels[0, 0])
-                exit()
+
                 # To variable
                 inputs, time_labels = Variable(inputs), Variable(time_labels)
                 if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
@@ -270,7 +184,7 @@ for space in param_space:
             count = 0.0
 
             # Get test data for this fold
-            for i, data in enumerate(data_loader_test):
+            for i, data in enumerate(reuters_loader_test):
                 # Inputs and labels
                 inputs, labels, time_labels = data
 
@@ -304,10 +218,6 @@ for space in param_space:
 
             # Print success rate
             xp.add_result(successes / count)
-
-            # Next fold
-            cross_val_dataset['train'].next_fold()
-            cross_val_dataset['test'].next_fold()
 
             # Reset learning
             esn.reset()

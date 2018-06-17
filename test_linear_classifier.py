@@ -80,7 +80,6 @@ for k in np.arange(args.fold, 10):
     reutersloader.dataset.set_train(True)
 
     # Get test data for this fold
-    step = 0
     for i, data in enumerate(reutersloader):
         # Inputs and labels
         sample_inputs, labels, time_labels = data

@@ -56,6 +56,7 @@ def get_params(space):
     feedbacks_sparsity = space['feedbacks_sparsity']
     lang = space['lang'][0][0]
     embedding = space['embedding'][0][0]
+
     return reservoir_size, w_sparsity, leak_rate, input_scaling, input_sparsity, spectral_radius, feature, aggregation, \
            state_gram, feedbacks_sparsity, lang, embedding
 # end get_params
