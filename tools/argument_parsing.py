@@ -25,6 +25,8 @@ def parser_esn_training():
                       help="JSON file with the file description for each authors", required=False, extended=False)
     args.add_argument(command="--dataset-size", name="dataset_size", type=float,
                       help="Ratio of the data set to use (100 percent by default)", extended=False, default=100.0)
+    args.add_argument(command="--dataset-start", name="dataset_start", type=float,
+                      help="Where to start in the data set", extended=True, default=0)
     args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
 
     # Author parameters
