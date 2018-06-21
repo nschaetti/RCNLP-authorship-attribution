@@ -39,7 +39,7 @@ from tools import argument_parsing, dataset, functions, features
 args, use_cuda, param_space, xp = argument_parsing.parser_esn_training()
 
 # Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset()
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size)
 
 # Print authors
 xp.write(u"Authors : {}".format(reutersc50_dataset.authors), log_level=0)
@@ -58,10 +58,13 @@ for space in param_space:
     # Params
     reservoir_size, w_sparsity, leak_rate, input_scaling, \
     input_sparsity, spectral_radius, feature, aggregation, \
-    state_gram, feedbacks_sparsity, lang, embedding = functions.get_params(space)
+    state_gram, feedbacks_sparsity, lang, embedding, dataset_start = functions.get_params(space)
 
     # Choose the right transformer
     reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang)
+
+    # Dataset start
+    reutersc50_dataset.set_start(dataset_start)
 
     # Set experience state
     xp.set_state(space)
@@ -117,9 +120,6 @@ for space in param_space:
 
                 # Accumulate xTx and xTy
                 esn(inputs, time_labels)
-
-                # OOV
-                # oov = np.append(oov, [reutersc50_dataset.transform.transforms[2].oov])
             # end for
 
             # Finalize training
@@ -158,9 +158,6 @@ for space in param_space:
                 if torch.equal(y_predicted, labels):
                     successes += 1.0
                 # end if
-
-                # OOV
-                # oov = np.append(oov, [reutersc50_dataset.transform.transforms[2].oov])
 
                 count += 1.0
             # end for
