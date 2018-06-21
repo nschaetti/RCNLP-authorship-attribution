@@ -13,7 +13,7 @@ import torch
 
 
 # Load dataset
-def load_dataset():
+def load_dataset(dataset_size=100, dataset_start=0):
     """
     Load dataset
     :return:
@@ -21,7 +21,9 @@ def load_dataset():
     # Load from directory
     reutersc50_dataset = torchlanguage.datasets.ReutersC50Dataset(
         n_authors=15,
-        download=True
+        download=True,
+        dataset_size=dataset_size,
+        dataset_start=dataset_start
     )
 
     # Reuters C50 dataset training
