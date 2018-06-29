@@ -72,6 +72,11 @@ for space in param_space:
     # Average sample
     average_sample = np.array([])
 
+    # New W?
+    if len(last_space) > 0 and last_space['reservoir_size'] != space['reservoir_size']:
+        w = etnn.ESNCell.generate_w(int(space['reservoir_size']), space['w_sparsity'])
+    # end if
+
     # For each sample
     for n in range(args.n_samples):
         # Set sample
@@ -123,7 +128,11 @@ for space in param_space:
             # end for
 
             # Finalize training
-            esn.finalize()
+            try:
+                esn.finalize()
+            except RuntimeError:
+                continue
+            # end try
 
             # Counters
             successes = 0.0

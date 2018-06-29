@@ -109,7 +109,7 @@ for space in param_space:
             # Train CCSAA
             model_cgfs = cgfs_selector.train_cgfs(
                 fold=k,
-                cgfs_epoch=2,
+                cgfs_epoch=40,
                 n_gram='c3',
                 dataset_size=args.dataset_size,
                 dataset_start=dataset_start,

@@ -23,6 +23,7 @@
 #
 
 # Imports
+import os
 import torch.utils.data
 from torch.autograd import Variable
 from torch import optim
@@ -66,7 +67,7 @@ def create_ccsaa_transformer(ccsaa_model, ccsaa_voc, use_cuda=True):
 
 
 # Train CCSAA
-def train_ccsaa(fold=0, ccsaa_epoch=100, text_length=20, n_gram='c1', dataset_size=100, dataset_start=0, cuda=True):
+def train_ccsaa(fold=0, ccsaa_epoch=100, text_length=20, n_gram='c1', dataset_size=100, dataset_start=0, cuda=True, save=False, save_dir='.'):
     """
     Train CCSAA
     :param fold:
@@ -78,6 +79,9 @@ def train_ccsaa(fold=0, ccsaa_epoch=100, text_length=20, n_gram='c1', dataset_si
     :param cuda:
     :return:
     """
+    # Save path
+    save_path = os.path.join(save_dir, str(int(dataset_size)), str(int(dataset_start)))
+
     # Transforms
     if n_gram == 'c1':
         transform = transforms.Compose([
@@ -117,6 +121,17 @@ def train_ccsaa(fold=0, ccsaa_epoch=100, text_length=20, n_gram='c1', dataset_si
         model.cuda()
     # end if
 
+    # Load
+    if save and os.path.exists(os.path.join(save_path, u"ccsaa." + str(fold) + u".pth")) and os.path.exists(os.path.join(save_path, u"ccsaa." + str(fold) + u".voc.pth")):
+        model.load_state_dict(
+            torch.load(open(os.path.join(save_path, u"ccsaa." + str(fold) + u".pth"), 'rb'))
+        )
+        voc = torch.load(
+            open(os.path.join(save_path, u"ccsaa." + str(fold) + u".voc.pth"), 'rb')
+        )
+        return model, voc
+    # end if
+
     # Optimizer
     optimizer = optim.SGD(model.parameters(), lr=settings.ccsaa_lr, momentum=settings.ccsaa_momentum)
 
@@ -124,8 +139,11 @@ def train_ccsaa(fold=0, ccsaa_epoch=100, text_length=20, n_gram='c1', dataset_si
     best_acc = 0.0
     best_model = model.state_dict()
 
+    # Fail count
+    fail_count = 0
+
     # Epoch
-    for epoch in range(ccsaa_epoch):
+    for epoch in range(10000):
         # Total losses
         training_loss = 0.0
         training_total = 0.0
@@ -209,14 +227,41 @@ def train_ccsaa(fold=0, ccsaa_epoch=100, text_length=20, n_gram='c1', dataset_si
         # print(u"Epoch {}, train loss {}, test loss {}, accuracy {}".format(epoch, training_loss / training_total, test_loss / test_total, accuracy))
 
         # Save if best
-        if accuracy > best_acc:
+        if accuracy > best_acc and epoch > 10:
             best_acc = accuracy
             best_model = model.state_dict()
+            fail_count = 0
+        elif epoch > 10:
+            fail_count += 1
+        # end if
+
+        if fail_count > ccsaa_epoch:
+            break
         # end if
     # end for
 
     # Load best
     model.load_state_dict(best_model)
+
+    # Save
+    if save:
+        # Create dir if not exists
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+        # end if
+
+        # Save
+        torch.save(
+            model.state_dict(),
+            open(os.path.join(save_path, u"ccsaa." + str(fold) + u".pth"), 'wb')
+        )
+
+        # Save doc
+        torch.save(
+            transform.transforms[1].token_to_ix,
+            open(os.path.join(save_path, u"ccsaa." + str(fold) + u".voc.pth"), 'wb')
+        )
+    # end if
 
     return model, transform.transforms[1].token_to_ix
 # end train_ccsaa

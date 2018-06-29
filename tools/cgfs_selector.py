@@ -119,8 +119,11 @@ def train_cgfs(fold=0, cgfs_epoch=100, n_gram='c3', dataset_size=100, dataset_st
         momentum=settings.cgfs_momentum
     )
 
+    # Fail count
+    fail_count = 0
+
     # Epoch
-    for epoch in range(cgfs_epoch):
+    for epoch in range(10000):
         # Total losses
         training_loss = 0.0
         training_total = 0.0
@@ -210,6 +213,14 @@ def train_cgfs(fold=0, cgfs_epoch=100, n_gram='c3', dataset_size=100, dataset_st
         if accuracy > best_acc:
             best_acc = accuracy
             best_model = model.state_dict()
+            fail_count = 0
+        elif epoch > 30:
+            fail_count += 1
+        # end if
+
+        # Fail
+        if fail_count > cgfs_epoch:
+            break
         # end if
     # end for
 
