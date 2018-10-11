@@ -34,6 +34,7 @@ def load_cgfs(fold=0, use_cuda=False):
     cgfs.load_state_dict(state_dict)
 
     # Remove last linear layer
+    # cgfs.linear3 = etnn.Identity()
     cgfs.linear2 = etnn.Identity()
 
     # Transformer
@@ -44,8 +45,7 @@ def load_cgfs(fold=0, use_cuda=False):
             torchlanguage.transforms.Reshape((-1, 1, 3, settings.cgfs_input_dim)),
             torchlanguage.transforms.ToCUDA(),
             torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim['c3'], to_variable=True),
-            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim['c3'])),
-            torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std, input_dim=90)
+            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim['c3']))
         ])
     else:
         transformer = torchlanguage.transforms.Compose([
@@ -53,8 +53,7 @@ def load_cgfs(fold=0, use_cuda=False):
             torchlanguage.transforms.ToNGram(n=3, overlapse=True),
             torchlanguage.transforms.Reshape((-1, 1, 3, settings.cgfs_input_dim)),
             torchlanguage.transforms.FeatureSelector(cgfs, settings.cgfs_output_dim['c3'], to_variable=True),
-            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim['c3'])),
-            torchlanguage.transforms.Normalize(mean=settings.cgfs_mean, std=settings.cgfs_std, input_dim=90)
+            torchlanguage.transforms.Reshape((-1, settings.cgfs_output_dim['c3']))
         ])
     # end if
     return cgfs, transformer

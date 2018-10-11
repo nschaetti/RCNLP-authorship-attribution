@@ -29,9 +29,126 @@ from torch.autograd import Variable
 from torch import optim
 import torch.nn as nn
 import torchlanguage.models
+from torchlanguage import models
 from torchlanguage import transforms
 from tools import dataset, settings
 import echotorch.nn as etnn
+
+
+# Load CCSAA 35
+def load_ccsaa35(use_cuda=False):
+    """
+    Load CNN Character Selector for Authorship Attribution
+    :param fold:
+    :return:
+    """
+    # Path
+    path = os.path.join("feature_selectors", "ccsaa", "ccsaa35.pth")
+    voc_path = os.path.join("feature_selectors", "ccsaa", "ccsaa35.voc.pth")
+    print(path)
+    print(voc_path)
+    # CNN Character Selector for Authorship Attribution
+    ccsaa = models.CCSAA(
+        text_length=settings.ccsaa_text_length,
+        vocab_size=settings.ccsaa_pretrain_voc_size,
+        n_classes=settings.n_pretrain_authors,
+        n_features=settings.ccsaa_output_dim
+    )
+    if use_cuda:
+        ccsaa.cuda()
+    # end if
+
+    # Eval
+    ccsaa.eval()
+
+    # Load dict and voc
+    ccsaa.load_state_dict(torch.load(open(path, 'rb')))
+    voc = torch.load(open(voc_path, 'rb'))
+
+    # Remove last linear layer
+    ccsaa.linear2 = etnn.Identity()
+
+    # Transformer
+    if use_cuda:
+        transformer = torchlanguage.transforms.Compose([
+            torchlanguage.transforms.Character(),
+            torchlanguage.transforms.ToIndex(token_to_ix=voc),
+            torchlanguage.transforms.ToNGram(n=settings.ccsaa_text_length, overlapse=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_text_length)),
+            torchlanguage.transforms.ToCUDA(),
+            torchlanguage.transforms.FeatureSelector(ccsaa, settings.ccsaa_output_dim, to_variable=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_output_dim))
+        ])
+    else:
+        transformer = torchlanguage.transforms.Compose([
+            torchlanguage.transforms.Character(),
+            torchlanguage.transforms.ToIndex(token_to_ix=voc),
+            torchlanguage.transforms.ToNGram(n=settings.ccsaa_text_length, overlapse=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_text_length)),
+            torchlanguage.transforms.FeatureSelector(ccsaa, settings.ccsaa_output_dim, to_variable=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_output_dim))
+        ])
+    # end if
+    return ccsaa, transformer
+# end load_ccsaa
+
+
+# Load CCSAA
+def load_ccsaa(fold=0, dataset_size=100, dataset_start=0, use_cuda=False):
+    """
+    Load CNN Character Selector for Authorship Attribution
+    :param fold:
+    :return:
+    """
+    # Path
+    path = os.path.join("feature_selectors", "ccsaa", str(int(dataset_size)), str(int(dataset_start)), "ccsaa.{}.pth".format(fold))
+    voc_path = os.path.join("feature_selectors", "ccsaa", str(int(dataset_size)), str(int(dataset_start)), "ccsaa.{}.voc.pth".format(fold))
+    # print(path)
+    # print(voc_path)
+    # CNN Character Selector for Authorship Attribution
+    ccsaa = models.CCSAA(
+        text_length=settings.ccsaa_text_length,
+        vocab_size=settings.ccsaa_voc_size,
+        n_classes=settings.n_authors,
+        n_features=settings.ccsaa_output_dim
+    )
+    if use_cuda:
+        ccsaa.cuda()
+    # end if
+
+    # Eval
+    ccsaa.eval()
+
+    # Load dict and voc
+    ccsaa.load_state_dict(torch.load(open(path, 'rb')))
+    voc = torch.load(open(voc_path, 'rb'))
+
+    # Remove last linear layer
+    ccsaa.linear2 = etnn.Identity()
+
+    # Transformer
+    if use_cuda:
+        transformer = torchlanguage.transforms.Compose([
+            torchlanguage.transforms.Character(),
+            torchlanguage.transforms.ToIndex(token_to_ix=voc),
+            torchlanguage.transforms.ToNGram(n=settings.ccsaa_text_length, overlapse=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_text_length)),
+            torchlanguage.transforms.ToCUDA(),
+            torchlanguage.transforms.FeatureSelector(ccsaa, settings.ccsaa_output_dim, to_variable=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_output_dim))
+        ])
+    else:
+        transformer = torchlanguage.transforms.Compose([
+            torchlanguage.transforms.Character(),
+            torchlanguage.transforms.ToIndex(token_to_ix=voc),
+            torchlanguage.transforms.ToNGram(n=settings.ccsaa_text_length, overlapse=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_text_length)),
+            torchlanguage.transforms.FeatureSelector(ccsaa, settings.ccsaa_output_dim, to_variable=True),
+            torchlanguage.transforms.Reshape((-1, settings.ccsaa_output_dim))
+        ])
+    # end if
+    return ccsaa, transformer
+# end load_ccsaa
 
 
 # Create CCSAA transformer

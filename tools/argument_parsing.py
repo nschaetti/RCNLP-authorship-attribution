@@ -84,6 +84,9 @@ def parser_esn_training():
                       default='~/Projets/TURING/Datasets/', extended=False)
 
     # Experiment output parameters
+    args.add_argument(command="--window-size", name="window_size", type=str, help="Window size for prediction",
+                      extended=True, required=False, default=0)
+    args.add_argument(command="--measure", name="measure", type=str, help="Which measure to test (global/local)", extended=False, required=False, default='global')
     args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
     args.add_argument(command="--description", name="description", type=str, help="Experiment's description",
                       extended=False, required=True)
@@ -96,6 +99,7 @@ def parser_esn_training():
     args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose level", default=2, extended=False)
     args.add_argument(command="--cuda", name="cuda", action='store_true',
                       help="Use CUDA?", default=False, extended=False)
+    args.add_argument(command="--certainty", name="certainty", type=str, help="Save certainty data", default="", extended=False)
 
     # Parse arguments
     args.parse()
