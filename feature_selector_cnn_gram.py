@@ -34,6 +34,7 @@ from torch import optim
 import torch.nn as nn
 import torchlanguage.models
 from tools import dataset, features, settings
+import echotorch.utils
 
 # Argument parser
 parser = argparse.ArgumentParser(description="CNN feature extraction")
@@ -74,7 +75,7 @@ for k in np.arange(args.start_fold, args.end_fold+1):
     model = torchlanguage.models.CGFS(
         n_gram=args.n_gram,
         n_authors=settings.n_authors,
-        n_features=settings.cgfs_output_dim[args.n_gram]
+        n_features=settings.cgfs_output_dim_num[args.n_gram]
     )
     if args.cuda:
         model.cuda()
@@ -94,6 +95,8 @@ for k in np.arange(args.start_fold, args.end_fold+1):
     for epoch in range(settings.cgfs_epoch):
         # Total losses
         training_loss = 0.0
+        training_total = 0.0
+        test_total = 0.0
         test_loss = 0.0
 
         # Get test data for this fold
@@ -128,11 +131,14 @@ for k in np.arange(args.start_fold, args.end_fold+1):
 
             # Add
             training_loss += loss.data[0]
+            training_total += 1.0
         # end for
 
         # Counters
         total = 0.0
         success = 0.0
+        doc_total = 0.0
+        doc_success = 0.0
 
         # For each test sample
         for i, data in enumerate(reuters_loader_test):
@@ -146,9 +152,9 @@ for k in np.arange(args.start_fold, args.end_fold+1):
             outputs = torch.LongTensor(inputs.size(0)).fill_(labels[0])
 
             # To variable
-            inputs, outputs = Variable(inputs), Variable(outputs)
+            inputs, outputs, labels = Variable(inputs), Variable(outputs), Variable(labels)
             if args.cuda:
-                inputs, outputs = inputs.cuda(), outputs.cuda()
+                inputs, outputs, labels = inputs.cuda(), outputs.cuda(), labels.cuda()
             # end if
 
             # Forward
@@ -164,15 +170,32 @@ for k in np.arange(args.start_fold, args.end_fold+1):
 
             # Add loss
             test_loss += loss.data[0]
+
+            # Normalized
+            y_predicted = echotorch.utils.max_average_through_time(model_outputs, dim=0)
+
+            # Compare
+            if torch.equal(y_predicted, labels):
+                doc_success += 1.0
+            # end if
+            doc_total += 1.0
         # end for
 
         # Accuracy
         accuracy = success / total * 100.0
+        doc_accuracy = doc_success / doc_total * 100.0
 
         # Print and save loss
-        print(
-            u"Fold {}, epoch {}, training loss {}, test loss {}, accuracy {}".format(k, epoch, training_loss, test_loss,
-                                                                                     accuracy))
+        print(u"Fold {}, epoch {}, training total {}, training loss {}, test total {}, test loss {}, accuracy {}, doc accuracy {}".format(
+            k,
+            epoch,
+            training_total,
+            training_loss,
+            doc_total,
+            test_loss,
+            accuracy,
+            doc_accuracy)
+        )
 
         # Save if best
         if accuracy > best_acc:
