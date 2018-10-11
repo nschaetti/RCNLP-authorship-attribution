@@ -28,15 +28,18 @@ from torch.autograd import Variable
 from torchlanguage import datasets
 import torchlanguage.transforms as transforms
 import echotorch.nn as etnn
-import torchlanguage.models as models
+import tools.settings
+from tools import cgfs_selector, ccsaa_selector
+import tools.models
 import echotorch.utils
 import argparse
 import torchlanguage.utils
+import matplotlib.pyplot as plt
 
 # Settings
 embedding_dim = 300
 n_authors = 15
-n_gram = 2
+n_gram = 3
 use_cuda = True
 
 # Argument parser
@@ -50,68 +53,78 @@ args = parser.parse_args()
 # Use CUDA?
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-# CNN Glove Feature Selector
-cgfs = models.cgfs(pretrained=True, n_gram=n_gram, n_features=60)
-
-# Remove last linear layer
-cgfs.linear2 = echotorch.nn.Identity()
-
-# Transformer
-transformers = dict()
-transformers['linear'] = transforms.Compose([
-    transforms.GloveVector(),
-    transforms.ToNGram(n=n_gram, overlapse=True),
-    transforms.Reshape((-1, 600)),
-])
-transformers['cnn'] = transforms.Compose([
-    transforms.GloveVector(),
-    transforms.ToNGram(n=n_gram, overlapse=True),
-    transforms.Reshape((-1, 1, 2, 300)),
-    transforms.FeatureSelector(cgfs, 60, to_variable=True),
-    transforms.Reshape((-1, 60)),
-    transforms.Normalize(mean=-4.56512329954, std=0.911449706065)
-])
-
 # Average accuracy
 average_accuracy = dict()
 average_accuracy['linear'] = np.zeros(10)
-average_accuracy['cnn'] = np.zeros(10)
+average_accuracy['cgfs'] = np.zeros(10)
+average_accuracy['ccsaa'] = np.zeros(10)
 
 # Average accuracy
 global_average_accuracy = dict()
 global_average_accuracy['linear'] = np.zeros(10)
-global_average_accuracy['cnn'] = np.zeros(10)
+global_average_accuracy['cgfs'] = np.zeros(10)
+global_average_accuracy['ccsaa'] = np.zeros(10)
 
 # For each model
-for model_type in ['linear', 'cnn']:
+for model_type in ['ccsaa', 'cgfs', 'linear']:
     print(u"Model type {}".format(model_type))
 
-    # Reuters C50 dataset
-    reutersloader = torch.utils.data.DataLoader(datasets.ReutersC50Dataset(download=True, n_authors=15,
-                                                                           transform=transformers[model_type]),
-                                                batch_size=1, shuffle=False)
-
     # Data set
-    reuters_dataset = datasets.ReutersC50Dataset(root='./data', download=True, n_authors=n_authors,
-                                                 transform=transformers[model_type])
+    reuters_dataset = datasets.ReutersC50Dataset(
+        root='./data',
+        download=True,
+        n_authors=n_authors,
+        transform=None
+    )
 
     # Training dataset
     reutersloader_train = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidation(reuters_dataset, k=10, train=True),
-        batch_size=1, shuffle=False)
+        batch_size=1,
+        shuffle=False
+    )
 
     # Eval. dataset
     reutersloader_val = torch.utils.data.DataLoader(
         torchlanguage.utils.CrossValidation(reuters_dataset, k=10, train=False),
-        batch_size=1, shuffle=False)
+        batch_size=1,
+        shuffle=False
+    )
 
     # 10-CV
     for k in np.arange(args.fold, 10):
         # Model
         if model_type == 'linear':
+            # Transformer
+            transformer = transforms.Compose([
+                transforms.GloveVector(),
+                transforms.ToNGram(n=n_gram, overlapse=True),
+                transforms.Reshape((-1, n_gram * 300)),
+            ])
+
+            # Transformer
+            reuters_dataset.transform = transformer
+
+            # Linear regression
             model = etnn.RRCell(n_gram * 300, n_authors)
+        elif model_type == 'cgfs':
+            # CNN Glove Feature Selector
+            cgfs, transformer = cgfs_selector.load_cgfs(fold=k)
+
+            # Transformer
+            reuters_dataset.transform = transformer
+
+            # Linear regression
+            model = etnn.RRCell(tools.settings.cgfs_output_dim['c3'], n_authors)
         else:
-            model = etnn.RRCell(60, n_authors)
+            # CCSAA
+            ccsaa, transformer = ccsaa_selector.load_ccsaa(fold=k)
+            print(ccsaa.training)
+            # Transformer
+            reuters_dataset.transform = transformer
+
+            # Linear regression
+            model = etnn.RRCell(tools.settings.ccsaa_output_dim, n_authors)
         # end if
 
         # Get test data for this fold
@@ -122,11 +135,12 @@ for model_type in ['linear', 'cnn']:
 
             # View
             if model_type == 'linear':
-                inputs = inputs.view(1, -1, 600)
+                inputs = inputs.view(1, -1, n_gram * 300)
+            elif model_type == 'cgfs':
+                inputs = inputs.view(1, -1, tools.settings.cgfs_output_dim['c3'])
             else:
-                inputs = inputs.view(1, -1, 60)
+                inputs = inputs.view(1, -1, tools.settings.ccsaa_output_dim)
             # end if
-            time_labels = time_labels.view(1, -1, n_authors)
 
             # To variable
             inputs, time_labels = Variable(inputs), Variable(time_labels)
@@ -193,4 +207,5 @@ for model_type in ['linear', 'cnn']:
     print(u"\t10-fold cross validation for {} : {} / {}".format(model_type, np.average(average_accuracy[model_type]), np.average(global_average_accuracy[model_type])))
 # end for
 
-print(u"Difference : {} / {}".format(np.average(average_accuracy['cnn']) - np.average(average_accuracy['linear']), np.average(global_average_accuracy['cnn']) - np.average(global_average_accuracy['linear'])))
+print(u"Difference CGFS : {} / {}".format(np.average(average_accuracy['cgfs']) - np.average(average_accuracy['linear']), np.average(global_average_accuracy['cgfs']) - np.average(global_average_accuracy['linear'])))
+print(u"Difference CCSAA : {} / {}".format(np.average(average_accuracy['ccsaa']) - np.average(average_accuracy['linear']), np.average(global_average_accuracy['ccsaa']) - np.average(global_average_accuracy['linear'])))
