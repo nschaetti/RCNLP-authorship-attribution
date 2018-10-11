@@ -34,10 +34,6 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
-from sklearn import tree
-from sklearn import ensemble
-from sklearn.svm import SVC
-from sklearn.linear_model import SGDClassifier
 
 ####################################################
 # Main
@@ -52,11 +48,12 @@ args.add_argument(command="--dataset-size", name="dataset_size", type=int,
                   help="Ratio of the data set to use (100 percent by default)", extended=False, default=100)
 args.add_argument(command="--dataset-start", name="dataset_start", type=int,
                   help="Ratio of the data set to use (100 percent by default)", extended=False, default=100)
+args.add_argument(command="--dataset-step", name="dataset_step", type=int, help="Dataset step", extended=False, default=1)
+args.add_argument(command="--dataset-end", name="dataset_end", type=int, help="Dataset end", extended=False, default=99)
 args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
 args.add_argument(command="--ngram", name="ngram", type=int, help="Ngram", extended=False, default=1)
 args.add_argument(command="--analyzer", name="analyzer", type=str, help="word, char, char_wb", extended=False, default='word')
 args.add_argument(command="--mfw", name="mfw", type=int, help="mfw", extended=False, default=None)
-args.add_argument(command="--kernel", name="kernel", type=str, help="linear,poly,rbf,sigmoid", extended=False, default='linear')
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -70,12 +67,6 @@ args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose l
 
 # Parse arguments
 args.parse()
-
-# Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size, sentence_level=False)
-
-# Dataset start
-reutersc50_dataset.set_start(0)
 
 # Experiment
 xp = nsNLP.tools.ResultManager\
@@ -92,82 +83,91 @@ xp = nsNLP.tools.ResultManager\
 # Average
 average_k_fold = np.array([])
 
-# Print authors
-xp.write(u"Authors : {}".format(reutersc50_dataset.authors), log_level=0)
+# Sample
+xp.set_sample_state(0)
 
-# For each batch
-for k in range(10):
-    # Set k
-    xp.set_fold_state(k)
+# For each start
+for s in range(0, args.dataset_end, args.dataset_step):
+    # Load from directory
+    reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size, sentence_level=False)
 
-    # Choose fold
-    reuters_loader_train.dataset.set_fold(k)
-    reuters_loader_test.dataset.set_fold(k)
+    # Dataset start
+    reutersc50_dataset.set_start(s)
 
-    # Samples and classes
-    samples = list()
-    classes = list()
+    # For each batch
+    for k in range(10):
+        # Set k
+        xp.set_fold_state(k)
 
-    # Count vector
-    count_vec = CountVectorizer(ngram_range=(1, args.ngram))
+        # Choose fold
+        reuters_loader_train.dataset.set_fold(k)
+        reuters_loader_test.dataset.set_fold(k)
 
-    # TF-IDF transformer
-    tf_transformer = TfidfTransformer(use_idf=False)
+        # Samples and classes
+        samples = list()
+        classes = list()
 
-    # Classifier
-    classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, random_state=42,  max_iter=5, tol=None)
+        # Count vector
+        count_vec = CountVectorizer(ngram_range=(1, args.ngram), max_features=args.mfw)
 
-    # Pipleline
-    text_clf = Pipeline([('vec', count_vec),
-                         ('tfidf', tf_transformer),
-                         ('clf', classifier)])
+        # TF-IDF transformer
+        tf_transformer = TfidfTransformer(use_idf=True)
 
-    # Choose the right transformer
-    reutersc50_dataset.transform = None
+        # Classifier
+        classifier = MultinomialNB()
 
-    # Get training data for this fold
-    for i, data in enumerate(reuters_loader_train):
-        # Sample
-        inputs, label = data
+        # Pipleline
+        text_clf = Pipeline([('vec', count_vec),
+                             ('tfidf', tf_transformer),
+                             ('clf', classifier)])
 
-        # Author
-        label = int(label[0])
+        # Choose the right transformer
+        reutersc50_dataset.transform = None
 
-        # Add
-        samples.append(inputs[0])
-        classes.append(unicode(label))
+        # Get training data for this fold
+        for i, data in enumerate(reuters_loader_train):
+            # Sample
+            inputs, label = data
+
+            # Author
+            label = int(label[0])
+
+            # Add
+            samples.append(inputs[0])
+            classes.append(unicode(label))
+        # end for
+        
+        # Train
+        text_clf.fit(samples, classes)
+
+        # Counters
+        successes = 0.0
+        count = 0.0
+
+        # Get test data for this fold
+        for i, data in enumerate(reuters_loader_test):
+            # Sample
+            inputs, label = data
+
+            # Author
+            label = unicode(int(label[0]))
+
+            # Predict
+            prediction = text_clf.predict(inputs)[0]
+
+            # Check
+            if label == prediction:
+                successes += 1.0
+            # end if
+            count += 1.0
+        # end for
+
+        # Compute accuracy
+        accuracy = successes / count
+
+        # Print success rate
+        xp.add_result(accuracy)
     # end for
-
-    # Train
-    text_clf.fit(samples, classes)
-
-    # Counters
-    successes = 0.0
-    count = 0.0
-
-    # Get test data for this fold
-    for i, data in enumerate(reuters_loader_test):
-        # Sample
-        inputs, label = data
-
-        # Author
-        label = unicode(int(label[0]))
-
-        # Predict
-        prediction = text_clf.predict(inputs)[0]
-
-        # Check
-        if label == prediction:
-            successes += 1.0
-        # end if
-        count += 1.0
-    # end for
-
-    # Compute accuracy
-    accuracy = successes / count
-
-    # Print success rate
-    xp.add_result(accuracy)
 # end for
 
 xp.save()

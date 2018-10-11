@@ -30,13 +30,13 @@ import echotorch.utils
 from tools import argument_parsing, dataset, functions, features
 import matplotlib.pyplot as plt
 import nsNLP
+import nsNLP.tokenization
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 from sklearn import tree
 from sklearn import ensemble
-from sklearn.svm import SVC
 from sklearn.linear_model import SGDClassifier
 
 ####################################################
@@ -53,10 +53,12 @@ args.add_argument(command="--dataset-size", name="dataset_size", type=int,
 args.add_argument(command="--dataset-start", name="dataset_start", type=int,
                   help="Ratio of the data set to use (100 percent by default)", extended=False, default=100)
 args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validation", extended=False, default=10)
+args.add_argument(command="--nsnlp", name="nsnlp", action='store_true', help="Use NSNLP", extended=False, default=False)
+args.add_argument(command="--smoothing-type", name="smoothing_type", type=str, help="Smoothing type (dp, jm)", extended=False, default='dp')
+args.add_argument(command="--smoothing-param", name="smoothing_param", type=float, help="Smoothing parameter (dp: 0 to inf, jm: 0 to 1)", extended=False, default=1000)
 args.add_argument(command="--ngram", name="ngram", type=int, help="Ngram", extended=False, default=1)
 args.add_argument(command="--analyzer", name="analyzer", type=str, help="word, char, char_wb", extended=False, default='word')
 args.add_argument(command="--mfw", name="mfw", type=int, help="mfw", extended=False, default=None)
-args.add_argument(command="--kernel", name="kernel", type=str, help="linear,poly,rbf,sigmoid", extended=False, default='linear')
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -72,7 +74,7 @@ args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose l
 args.parse()
 
 # Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size, sentence_level=False)
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size, sentence_level=True)
 
 # Dataset start
 reutersc50_dataset.set_start(0)
@@ -108,38 +110,66 @@ for k in range(10):
     samples = list()
     classes = list()
 
-    # Count vector
-    count_vec = CountVectorizer(ngram_range=(1, args.ngram))
+    # Sklearn
+    if not args.nsnlp:
+        # Count vector
+        count_vec = CountVectorizer(ngram_range=(1, args.ngram), max_features=args.mfw)
 
-    # TF-IDF transformer
-    tf_transformer = TfidfTransformer(use_idf=False)
+        # TF-IDF transformer
+        tf_transformer = TfidfTransformer(use_idf=False)
 
-    # Classifier
-    classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, random_state=42,  max_iter=5, tol=None)
+        # Classifier
+        classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, random_state=42,  max_iter=5, tol=None)
 
-    # Pipleline
-    text_clf = Pipeline([('vec', count_vec),
-                         ('tfidf', tf_transformer),
-                         ('clf', classifier)])
+        # Pipleline
+        text_clf = Pipeline([('vec', count_vec),
+                             ('tfidf', tf_transformer),
+                             ('clf', classifier)])
+    else:
+        # Tokenizer
+        tokenizer = nsNLP.tokenization.SpacyTokenizer()
+
+        # Bag of word features
+        tf_transformer = nsNLP.features.BagOfWords()
+
+        # Naive bayes classifier
+        text_clf = nsNLP.statistical_models.NaiveBayesClassifier(
+            classes=reutersc50_dataset.authors,
+            smoothing=args.smoothing_type,
+            smoothing_param=args.smoothing_param
+        )
+    # end if
 
     # Choose the right transformer
     reutersc50_dataset.transform = None
 
     # Get training data for this fold
     for i, data in enumerate(reuters_loader_train):
-        # Sample
-        inputs, label = data
+        for j in range(len(data)):
+            # Sample
+            inputs, label, author_name = data[j]
 
-        # Author
-        label = int(label[0])
+            # Author
+            label = int(label[0])
 
-        # Add
-        samples.append(inputs[0])
-        classes.append(unicode(label))
+            # Sklearn
+            if not args.nsnlp:
+                # Add
+                samples.append(inputs[0])
+                classes.append(unicode(label))
+            else:
+                # Add
+                text_clf.train(tf_transformer(tokenizer(inputs[0])), author_name[0])
+            # end if
+        # end for
     # end for
 
     # Train
-    text_clf.fit(samples, classes)
+    if not args.nsnlp:
+        text_clf.fit(samples, classes)
+    else:
+        text_clf.finalize(verbose=False)
+    # end if
 
     # Counters
     successes = 0.0
@@ -147,20 +177,32 @@ for k in range(10):
 
     # Get test data for this fold
     for i, data in enumerate(reuters_loader_test):
-        # Sample
-        inputs, label = data
+        for j in range(len(data)):
+            # Sample
+            inputs, label, author_name = data[j]
 
-        # Author
-        label = unicode(int(label[0]))
+            # Author
+            label = unicode(int(label[0]))
 
-        # Predict
-        prediction = text_clf.predict(inputs)[0]
+            # Sklearn
+            if not args.nsnlp:
+                # Predict
+                prediction = text_clf.predict(inputs)[0]
 
-        # Check
-        if label == prediction:
-            successes += 1.0
-        # end if
-        count += 1.0
+                # Check
+                if label == prediction:
+                    successes += 1.0
+                # end if
+            else:
+                # Predict
+                prediction, probs = text_clf.predict(tf_transformer(tokenizer(inputs[0])))
+
+                # Check
+                if author_name[0] == prediction:
+                    successes += 1.0
+                # end if
+            # end if
+            count += 1.0
     # end for
 
     # Compute accuracy

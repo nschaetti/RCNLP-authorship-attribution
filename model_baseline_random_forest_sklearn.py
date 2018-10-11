@@ -36,8 +36,6 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 from sklearn import tree
 from sklearn import ensemble
-from sklearn.svm import SVC
-from sklearn.linear_model import SGDClassifier
 
 ####################################################
 # Main
@@ -56,7 +54,7 @@ args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validati
 args.add_argument(command="--ngram", name="ngram", type=int, help="Ngram", extended=False, default=1)
 args.add_argument(command="--analyzer", name="analyzer", type=str, help="word, char, char_wb", extended=False, default='word')
 args.add_argument(command="--mfw", name="mfw", type=int, help="mfw", extended=False, default=None)
-args.add_argument(command="--kernel", name="kernel", type=str, help="linear,poly,rbf,sigmoid", extended=False, default='linear')
+args.add_argument(command="--nestimators", name="nestimators", type=int, help="Nb. estimators", extended=False, default=10)
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -109,13 +107,13 @@ for k in range(10):
     classes = list()
 
     # Count vector
-    count_vec = CountVectorizer(ngram_range=(1, args.ngram))
+    count_vec = CountVectorizer(ngram_range=(1, args.ngram), analyzer=args.analyzer, max_features=args.mfw)
 
     # TF-IDF transformer
-    tf_transformer = TfidfTransformer(use_idf=False)
+    tf_transformer = TfidfTransformer(use_idf=True)
 
     # Classifier
-    classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, random_state=42,  max_iter=5, tol=None)
+    classifier = ensemble.RandomForestClassifier()
 
     # Pipleline
     text_clf = Pipeline([('vec', count_vec),

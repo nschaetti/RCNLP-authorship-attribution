@@ -28,6 +28,7 @@ from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
 from tools import argument_parsing, dataset, functions, features
+import matplotlib.pyplot as plt
 
 
 ####################################################
@@ -58,7 +59,7 @@ for space in param_space:
     # Params
     reservoir_size, w_sparsity, leak_rate, input_scaling, \
     input_sparsity, spectral_radius, feature, aggregation, \
-    state_gram, feedbacks_sparsity, lang, embedding, dataset_start = functions.get_params(space)
+    state_gram, feedbacks_sparsity, lang, embedding, dataset_start, window_size = functions.get_params(space)
 
     # Choose the right transformer
     reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang)
@@ -76,6 +77,10 @@ for space in param_space:
     if len(last_space) > 0 and last_space['reservoir_size'] != space['reservoir_size']:
         w = etnn.ESNCell.generate_w(int(space['reservoir_size']), space['w_sparsity'])
     # end if
+
+    # Certainty data
+    certainty_data = np.zeros((2, args.n_samples * 1500))
+    certainty_index = 0
 
     # For each sample
     for n in range(args.n_samples):
@@ -114,6 +119,9 @@ for space in param_space:
             reuters_loader_train.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
 
+            # Choose the right transformer
+            reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang, k, use_cuda, args.dataset_size, dataset_start)
+
             # Get training data for this fold
             for i, data in enumerate(reuters_loader_train):
                 # Inputs and labels
@@ -137,15 +145,20 @@ for space in param_space:
             # Counters
             successes = 0.0
             count = 0.0
+            local_success = 0.0
+            local_count = 0.0
 
             # Get test data for this fold
             for i, data in enumerate(reuters_loader_test):
                 # Inputs and labels
                 inputs, labels, time_labels = data
 
+                # Time labels
+                local_labels = torch.LongTensor(1, time_labels.size(1)).fill_(labels[0])
+
                 # To variable
-                inputs, labels = Variable(inputs), Variable(labels)
-                if use_cuda: inputs, labels = inputs.cuda(), labels.cuda()
+                inputs, labels, time_labels, local_labels = Variable(inputs), Variable(labels), Variable(time_labels), Variable(local_labels)
+                if use_cuda: inputs, labels, time_labels, local_labels = inputs.cuda(), labels.cuda(), time_labels.cuda(), local_labels.cuda()
 
                 # Predict
                 y_predicted = esn(inputs)
@@ -161,23 +174,52 @@ for space in param_space:
                 # end for
 
                 # Normalized
-                y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
+                global_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
 
                 # Compare
-                if torch.equal(y_predicted, labels):
+                if torch.equal(global_predicted, labels):
                     successes += 1.0
+                    certainty_data[1, certainty_index] = 1
+                else:
+                    certainty_data[1, certainty_index] = 0
                 # end if
 
+                # Certainty
+                y_max = float(torch.max(torch.mean(y_predicted, dim=1), dim=1)[0])
+                certainty_data[0, certainty_index] = y_max
+                certainty_index += 1
+
+                # Local predictions
+                _, local_predicted = torch.max(y_predicted, dim=2)
+
+                # Compare local
+                local_success += float((local_predicted == local_labels).sum())
+
+                # Count
                 count += 1.0
+                local_count += float(time_labels.size(1))
             # end for
 
+            # Compute accuracy
+            if args.measure == 'global':
+                accuracy = successes / count
+            else:
+                accuracy = local_success / local_count
+            # end if
+
             # Print success rate
-            xp.add_result(successes / count)
+            xp.add_result(accuracy)
 
             # Reset learning
             esn.reset()
         # end for
     # end for
+
+    # Save certainty
+    if args.certainty != "":
+        print(certainty_data)
+        np.save(open(args.certainty, "wb"), certainty_data)
+    # end if
 
     # W index
     w_index += 1
