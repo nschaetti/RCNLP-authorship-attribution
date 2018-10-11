@@ -27,8 +27,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
-from tools import argument_parsing, dataset, functions, features, ccsaa_selector, cgfs_selector, settings
-import matplotlib.pyplot as plt
+from tools import argument_parsing, dataset, functions, features, cenc_selector, settings
 
 
 ####################################################
@@ -70,6 +69,11 @@ for space in param_space:
     # Average sample
     average_sample = np.array([])
 
+    # New W?
+    if len(last_space) > 0 and last_space['reservoir_size'] != space['reservoir_size']:
+        w = etnn.ESNCell.generate_w(int(space['reservoir_size']), space['w_sparsity'])
+    # end if
+
     # For each sample
     for n in range(args.n_samples):
         # Set sample
@@ -77,7 +81,7 @@ for space in param_space:
 
         # ESN cell
         esn = etnn.LiESN(
-            input_dim=50,
+            input_dim=300,
             hidden_dim=reservoir_size,
             output_dim=reutersc50_dataset.n_authors,
             spectral_radius=spectral_radius,
@@ -107,20 +111,16 @@ for space in param_space:
             reuters_loader_train.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
 
-            # Train CCSAA
-            model_cgfs = cgfs_selector.train_cgfs(
+            # Train cEnc
+            model_cenc, transformer = cenc_selector.load_cenc(
                 fold=k,
-                cgfs_epoch=settings.cgfs_output_dim['c3'],
-                n_gram='c3',
                 dataset_size=args.dataset_size,
                 dataset_start=dataset_start,
-                cuda=use_cuda,
-                save_dir="feature_selectors/cgfs/c3",
-                save=True
+                use_cuda=use_cuda
             )
 
             # Choose the right transformer
-            reutersc50_dataset.transform = cgfs_selector.create_cgfs_transformer(model_cgfs, None, use_cuda)
+            reutersc50_dataset.transform = transformer
 
             # Get training data for this fold
             for i, data in enumerate(reuters_loader_train):
@@ -136,11 +136,7 @@ for space in param_space:
             # end for
 
             # Finalize training
-            try:
-                esn.finalize()
-            except RuntimeError:
-                continue
-            # end try
+            esn.finalize()
 
             # Counters
             successes = 0.0

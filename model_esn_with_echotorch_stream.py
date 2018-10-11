@@ -27,8 +27,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
-from tools import argument_parsing, dataset, functions, features, ccsaa_selector, cgfs_selector, settings
-import matplotlib.pyplot as plt
+from tools import argument_parsing, dataset, functions, features
 
 
 ####################################################
@@ -61,6 +60,9 @@ for space in param_space:
     input_sparsity, spectral_radius, feature, aggregation, \
     state_gram, feedbacks_sparsity, lang, embedding, dataset_start = functions.get_params(space)
 
+    # Choose the right transformer
+    reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang)
+
     # Dataset start
     reutersc50_dataset.set_start(dataset_start)
 
@@ -70,6 +72,11 @@ for space in param_space:
     # Average sample
     average_sample = np.array([])
 
+    # New W?
+    if len(last_space) > 0 and last_space['reservoir_size'] != space['reservoir_size']:
+        w = etnn.ESNCell.generate_w(int(space['reservoir_size']), space['w_sparsity'])
+    # end if
+
     # For each sample
     for n in range(args.n_samples):
         # Set sample
@@ -77,7 +84,7 @@ for space in param_space:
 
         # ESN cell
         esn = etnn.LiESN(
-            input_dim=50,
+            input_dim=reutersc50_dataset.transform.input_dim,
             hidden_dim=reservoir_size,
             output_dim=reutersc50_dataset.n_authors,
             spectral_radius=spectral_radius,
@@ -107,32 +114,34 @@ for space in param_space:
             reuters_loader_train.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
 
-            # Train CCSAA
-            model_cgfs = cgfs_selector.train_cgfs(
-                fold=k,
-                cgfs_epoch=settings.cgfs_output_dim['c3'],
-                n_gram='c3',
-                dataset_size=args.dataset_size,
-                dataset_start=dataset_start,
-                cuda=use_cuda,
-                save_dir="feature_selectors/cgfs/c3",
-                save=True
-            )
-
             # Choose the right transformer
-            reutersc50_dataset.transform = cgfs_selector.create_cgfs_transformer(model_cgfs, None, use_cuda)
+            reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang, k, use_cuda)
+
+            # Stream data
+            stream_inputs = torch.FloatTensor()
+            stream_time_labels = torch.FloatTensor()
+            stream_local_labels = torch.LongTensor()
 
             # Get training data for this fold
             for i, data in enumerate(reuters_loader_train):
                 # Inputs and labels
                 inputs, labels, time_labels = data
 
-                # To variable
-                inputs, time_labels = Variable(inputs), Variable(time_labels)
-                if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
+                if i % 2 == 1:
+                    # Inputs and labels
+                    stream_inputs = torch.cat((stream_inputs, inputs), dim=1)
+                    stream_time_labels = torch.cat((stream_time_labels, time_labels), dim=1)
 
-                # Accumulate xTx and xTy
-                esn(inputs, time_labels)
+                    # To variable
+                    stream_inputs, stream_time_labels = Variable(stream_inputs), Variable(stream_time_labels)
+                    if use_cuda: stream_inputs, stream_time_labels = stream_inputs.cuda(), stream_time_labels.cuda()
+
+                    # Accumulate xTx and xTy
+                    esn(stream_inputs, stream_time_labels)
+                else:
+                    stream_inputs = inputs
+                    stream_time_labels = time_labels
+                # end if
             # end for
 
             # Finalize training
@@ -143,7 +152,7 @@ for space in param_space:
             # end try
 
             # Counters
-            successes = 0.0
+            success = 0.0
             count = 0.0
 
             # Get test data for this fold
@@ -151,36 +160,52 @@ for space in param_space:
                 # Inputs and labels
                 inputs, labels, time_labels = data
 
-                # To variable
-                inputs, labels = Variable(inputs), Variable(labels)
-                if use_cuda: inputs, labels = inputs.cuda(), labels.cuda()
+                # Time labels
+                local_labels = torch.LongTensor(1, time_labels.size(1)).fill_(labels[0])
 
-                # Predict
-                y_predicted = esn(inputs)
+                if i % 2 == 1:
+                    # Inputs and labels
+                    stream_inputs = torch.cat((stream_inputs, inputs), dim=1)
+                    stream_time_labels = torch.cat((stream_time_labels, time_labels), dim=1)
+                    stream_local_labels = torch.cat((stream_local_labels, local_labels), dim=1)
 
-                # Normalized
-                y_predicted -= torch.min(y_predicted)
-                y_predicted /= torch.max(y_predicted) - torch.min(y_predicted)
+                    # To variable
+                    stream_inputs, stream_time_labels, stream_local_labels = Variable(stream_inputs), Variable(stream_time_labels), Variable(stream_local_labels)
+                    if use_cuda: stream_inputs, stream_time_labels, stream_local_labels = stream_inputs.cuda(), stream_time_labels.cuda(), stream_local_labels.cuda()
 
-                # Sum to one
-                sums = torch.sum(y_predicted, dim=2)
-                for t in range(y_predicted.size(1)):
-                    y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
-                # end for
+                    # Predict
+                    y_predicted = esn(stream_inputs)
 
-                # Normalized
-                y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
+                    # Normalized
+                    y_predicted -= torch.min(y_predicted)
+                    y_predicted /= torch.max(y_predicted) - torch.min(y_predicted)
 
-                # Compare
-                if torch.equal(y_predicted, labels):
-                    successes += 1.0
+                    # Sum to one
+                    sums = torch.sum(y_predicted, dim=2)
+                    for t in range(y_predicted.size(1)):
+                        y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
+                    # end for
+
+                    # Predictions
+                    _, predicted = torch.max(y_predicted, dim=2)
+
+                    # Compare local
+                    success += float((predicted == stream_local_labels).sum())
+
+                    # Count
+                    count += float(stream_local_labels.size(1))
+                else:
+                    stream_inputs = inputs
+                    stream_time_labels = time_labels
+                    stream_local_labels = local_labels
                 # end if
-
-                count += 1.0
             # end for
 
+            # Compute accuracy
+            accuracy = success / count
+
             # Print success rate
-            xp.add_result(successes / count)
+            xp.add_result(accuracy)
 
             # Reset learning
             esn.reset()

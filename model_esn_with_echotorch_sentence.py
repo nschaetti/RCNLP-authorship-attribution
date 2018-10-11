@@ -27,7 +27,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
-from tools import argument_parsing, dataset, functions, features, ccsaa_selector, cgfs_selector, settings
+from tools import argument_parsing, dataset, functions, features
 import matplotlib.pyplot as plt
 
 
@@ -40,7 +40,7 @@ import matplotlib.pyplot as plt
 args, use_cuda, param_space, xp = argument_parsing.parser_esn_training()
 
 # Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size)
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size, sentence_level=True)
 
 # Print authors
 xp.write(u"Authors : {}".format(reutersc50_dataset.authors), log_level=0)
@@ -61,6 +61,9 @@ for space in param_space:
     input_sparsity, spectral_radius, feature, aggregation, \
     state_gram, feedbacks_sparsity, lang, embedding, dataset_start = functions.get_params(space)
 
+    # Choose the right transformer
+    reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang)
+
     # Dataset start
     reutersc50_dataset.set_start(dataset_start)
 
@@ -70,6 +73,15 @@ for space in param_space:
     # Average sample
     average_sample = np.array([])
 
+    # New W?
+    if len(last_space) > 0 and last_space['reservoir_size'] != space['reservoir_size']:
+        w = etnn.ESNCell.generate_w(int(space['reservoir_size']), space['w_sparsity'])
+    # end if
+
+    # Certainty data
+    certainty_data = np.zeros((2, args.n_samples * 1500))
+    certainty_index = 0
+
     # For each sample
     for n in range(args.n_samples):
         # Set sample
@@ -77,7 +89,7 @@ for space in param_space:
 
         # ESN cell
         esn = etnn.LiESN(
-            input_dim=50,
+            input_dim=reutersc50_dataset.transform.input_dim,
             hidden_dim=reservoir_size,
             output_dim=reutersc50_dataset.n_authors,
             spectral_radius=spectral_radius,
@@ -107,32 +119,25 @@ for space in param_space:
             reuters_loader_train.dataset.set_fold(k)
             reuters_loader_test.dataset.set_fold(k)
 
-            # Train CCSAA
-            model_cgfs = cgfs_selector.train_cgfs(
-                fold=k,
-                cgfs_epoch=settings.cgfs_output_dim['c3'],
-                n_gram='c3',
-                dataset_size=args.dataset_size,
-                dataset_start=dataset_start,
-                cuda=use_cuda,
-                save_dir="feature_selectors/cgfs/c3",
-                save=True
-            )
-
             # Choose the right transformer
-            reutersc50_dataset.transform = cgfs_selector.create_cgfs_transformer(model_cgfs, None, use_cuda)
+            reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang, k, use_cuda, args.dataset_size, dataset_start)
 
             # Get training data for this fold
             for i, data in enumerate(reuters_loader_train):
-                # Inputs and labels
-                inputs, labels, time_labels = data
+                # Reset state
+                esn.reset_hidden()
 
-                # To variable
-                inputs, time_labels = Variable(inputs), Variable(time_labels)
-                if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
+                for j in range(len(data)):
+                    # Inputs and labels
+                    inputs, labels, time_labels, author_name = data[0]
 
-                # Accumulate xTx and xTy
-                esn(inputs, time_labels)
+                    # To variable
+                    inputs, time_labels = Variable(inputs), Variable(time_labels)
+                    if use_cuda: inputs, time_labels = inputs.cuda(), time_labels.cuda()
+
+                    # Accumulate xTx and xTy
+                    esn(inputs, time_labels, reset_state=False)
+                # end for
             # end for
 
             # Finalize training
@@ -145,42 +150,67 @@ for space in param_space:
             # Counters
             successes = 0.0
             count = 0.0
+            local_success = 0.0
+            local_count = 0.0
 
             # Get test data for this fold
             for i, data in enumerate(reuters_loader_test):
-                # Inputs and labels
-                inputs, labels, time_labels = data
+                # Reset state
+                esn.reset_hidden()
 
-                # To variable
-                inputs, labels = Variable(inputs), Variable(labels)
-                if use_cuda: inputs, labels = inputs.cuda(), labels.cuda()
+                for j in range(len(data)):
+                    # Inputs and labels
+                    inputs, labels, time_labels, author_name = data[0]
 
-                # Predict
-                y_predicted = esn(inputs)
+                    # Time labels
+                    local_labels = torch.LongTensor(1, time_labels.size(1)).fill_(labels[0])
+    
+                    # To variable
+                    inputs, labels, time_labels, local_labels = Variable(inputs), Variable(labels), Variable(time_labels), Variable(local_labels)
+                    if use_cuda: inputs, labels, time_labels, local_labels = inputs.cuda(), labels.cuda(), time_labels.cuda(), local_labels.cuda()
+    
+                    # Predict
+                    y_predicted = esn(inputs, reset_state=False)
 
-                # Normalized
-                y_predicted -= torch.min(y_predicted)
-                y_predicted /= torch.max(y_predicted) - torch.min(y_predicted)
+                    # Normalized
+                    y_predicted -= torch.min(y_predicted)
+                    y_predicted /= torch.max(y_predicted) - torch.min(y_predicted)
+    
+                    # Sum to one
+                    sums = torch.sum(y_predicted, dim=2)
+                    for t in range(y_predicted.size(1)):
+                        y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
+                    # end for
 
-                # Sum to one
-                sums = torch.sum(y_predicted, dim=2)
-                for t in range(y_predicted.size(1)):
-                    y_predicted[0, t, :] = y_predicted[0, t, :] / sums[0, t]
+                    # Normalized
+                    global_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
+
+                    # Compare
+                    if torch.equal(global_predicted, labels):
+                        successes += 1.0
+                    # end if
+    
+                    # Local predictions
+                    _, local_predicted = torch.max(y_predicted, dim=2)
+    
+                    # Compare local
+                    local_success += float((local_predicted == local_labels).sum())
+    
+                    # Count
+                    count += 1.0
+                    local_count += float(time_labels.size(1))
                 # end for
-
-                # Normalized
-                y_predicted = echotorch.utils.max_average_through_time(y_predicted, dim=1)
-
-                # Compare
-                if torch.equal(y_predicted, labels):
-                    successes += 1.0
-                # end if
-
-                count += 1.0
             # end for
 
+            # Compute accuracy
+            if args.measure == 'global':
+                accuracy = successes / count
+            else:
+                accuracy = local_success / local_count
+            # end if
+
             # Print success rate
-            xp.add_result(successes / count)
+            xp.add_result(accuracy)
 
             # Reset learning
             esn.reset()
