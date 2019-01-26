@@ -102,7 +102,7 @@ for space in param_space:
             feedbacks=args.feedbacks,
             wfdb_sparsity=feedbacks_sparsity,
             seed=1 if args.keep_w else None,
-            ridge_param=args.ridge_param
+            ridge_param=ridge_param
         )
         if use_cuda:
             esn.cuda()
