@@ -53,6 +53,8 @@ def parser_esn_training():
     args.add_argument(command="--transformer", name="transformer", type=str,
                       help="The text transformer to use (fw, pos, tag, wv, c1, c2, c3, cnn)", default='wv',
                       extended=True)
+    args.add_argument(command="--ridge-param", name="ridge_param", type=str, help="Ridge regression regularisation", extended=True,
+                      default="0.0")
     args.add_argument(command="--pca-path", name="pca_path", type=str, help="PCA model to load", default=None,
                       extended=False)
     args.add_argument(command="--keep-w", name="keep_w", action='store_true', help="Keep W matrix", default=False,

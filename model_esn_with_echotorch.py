@@ -59,7 +59,8 @@ for space in param_space:
     # Params
     reservoir_size, w_sparsity, leak_rate, input_scaling, \
     input_sparsity, spectral_radius, feature, aggregation, \
-    state_gram, feedbacks_sparsity, lang, embedding, dataset_start, window_size = functions.get_params(space)
+    state_gram, feedbacks_sparsity, lang, embedding, \
+    dataset_start, window_size, ridge_param = functions.get_params(space)
 
     # Choose the right transformer
     reutersc50_dataset.transform = features.create_transformer(feature, embedding, args.embedding_path, lang)
@@ -96,11 +97,12 @@ for space in param_space:
             sparsity=input_sparsity,
             input_scaling=input_scaling,
             w_sparsity=w_sparsity,
-            w=w if args.keep_w else None,
             learning_algo='inv',
             leaky_rate=leak_rate,
             feedbacks=args.feedbacks,
-            wfdb_sparsity=feedbacks_sparsity
+            wfdb_sparsity=feedbacks_sparsity,
+            seed=1 if args.keep_w else None,
+            ridge_param=args.ridge_param
         )
         if use_cuda:
             esn.cuda()

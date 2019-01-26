@@ -50,6 +50,7 @@ def get_params(space):
     input_scaling = space['input_scaling']
     input_sparsity = space['input_sparsity']
     spectral_radius = space['spectral_radius']
+    ridge_param = space['ridge_param']
     feature = space['transformer'][0][0]
     aggregation = space['aggregation'][0][0]
     state_gram = space['state_gram']
@@ -60,7 +61,7 @@ def get_params(space):
     window_size = int(space['window_size'])
 
     return reservoir_size, w_sparsity, leak_rate, input_scaling, input_sparsity, spectral_radius, feature, aggregation, \
-           state_gram, feedbacks_sparsity, lang, embedding, dataset_start, window_size
+           state_gram, feedbacks_sparsity, lang, embedding, dataset_start, window_size, ridge_param
 # end get_params
 
 
