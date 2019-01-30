@@ -59,9 +59,10 @@ def get_params(space):
     embedding = space['embedding'][0][0]
     dataset_start = space['dataset_start']
     window_size = int(space['window_size'])
+    washout = int(space['washout'])
 
     return reservoir_size, w_sparsity, leak_rate, input_scaling, input_sparsity, spectral_radius, feature, aggregation, \
-           state_gram, feedbacks_sparsity, lang, embedding, dataset_start, window_size, ridge_param
+           state_gram, feedbacks_sparsity, lang, embedding, dataset_start, window_size, ridge_param, washout
 # end get_params
 
 

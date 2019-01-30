@@ -73,6 +73,7 @@ def parser_esn_training():
                       default="0.05")
     args.add_argument(command="--n-layers", name="n_layers", type=int, help="Number of layers in a stacked ESN", extended=True,
                       default="1")
+    args.add_argument(command="--washout", name="washout", type=str, help="Washout period", extended=True, default="0")
 
     # Tokenizer and word vector parameters
     args.add_argument(command="--tokenizer", name="tokenizer", type=str,
