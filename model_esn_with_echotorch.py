@@ -196,7 +196,7 @@ for space in param_space:
                 _, local_predicted = torch.max(y_predicted, dim=2)
 
                 # Compare local
-                local_success += float((local_predicted == local_labels).sum())
+                local_success += float((local_predicted == local_labels[:, washout:]).sum())
 
                 # Count
                 count += 1.0
