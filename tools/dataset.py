@@ -14,7 +14,7 @@ import settings
 
 
 # Load dataset
-def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level=False):
+def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level=False, n_authors=15):
     """
     Load dataset
     :return:
@@ -22,14 +22,14 @@ def load_dataset(dataset_size=100, dataset_start=0, shuffle=True, sentence_level
     # Load from directory
     if sentence_level:
         reutersc50_dataset = torchlanguage.datasets.ReutersC50SentenceDataset(
-            n_authors=15,
+            n_authors=n_authors,
             download=True,
             dataset_size=dataset_size,
             dataset_start=dataset_start
         )
     else:
         reutersc50_dataset = torchlanguage.datasets.ReutersC50Dataset(
-            n_authors=15,
+            n_authors=n_authors,
             download=True,
             dataset_size=dataset_size,
             dataset_start=dataset_start
