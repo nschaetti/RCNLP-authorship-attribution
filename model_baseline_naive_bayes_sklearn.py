@@ -52,6 +52,8 @@ args.add_argument(command="--k", name="k", type=int, help="K-Fold Cross Validati
 args.add_argument(command="--ngram", name="ngram", type=int, help="Ngram", extended=False, default=1)
 args.add_argument(command="--analyzer", name="analyzer", type=str, help="word, char, char_wb", extended=False, default='word')
 args.add_argument(command="--mfw", name="mfw", type=int, help="mfw", extended=False, default=None)
+args.add_argument(command="--n-authors", name="n_authors", type=int,
+                      help="Number of authors to include in the test", default=15, extended=False)
 
 # Experiment output parameters
 args.add_argument(command="--name", name="name", type=str, help="Experiment's name", extended=False, required=True)
@@ -67,7 +69,11 @@ args.add_argument(command="--verbose", name="verbose", type=int, help="Verbose l
 args.parse()
 
 # Load from directory
-reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(args.dataset_size, sentence_level=False)
+reutersc50_dataset, reuters_loader_train, reuters_loader_test = dataset.load_dataset(
+    args.dataset_size,
+    sentence_level=False,
+    n_authors=args.n_authors
+)
 
 # Dataset start
 reutersc50_dataset.set_start(0)
@@ -107,7 +113,7 @@ for k in range(10):
     count_vec = CountVectorizer(ngram_range=(1, args.ngram), max_features=args.mfw)
 
     # TF-IDF transformer
-    tf_transformer = TfidfTransformer(use_idf=False)
+    tf_transformer = TfidfTransformer(use_idf=True)
 
     # Classifier
     classifier = MultinomialNB()

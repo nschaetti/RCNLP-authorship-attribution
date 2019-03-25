@@ -28,7 +28,6 @@ from torch.autograd import Variable
 import echotorch.nn as etnn
 import echotorch.utils
 from tools import argument_parsing, dataset, functions, features
-import matplotlib.pyplot as plt
 
 
 ####################################################
