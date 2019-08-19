@@ -95,6 +95,7 @@ print(np.max(np.array(length_list)))
 print(np.average(np.array(length_list)))
 print(np.std(np.array(length_list)))
 
+print(np.array(tokens_per_author))
 print(np.min(np.array(tokens_per_author.values())))
 print(np.max(np.array(tokens_per_author.values())))
 print(np.average(np.array(tokens_per_author.values())))
